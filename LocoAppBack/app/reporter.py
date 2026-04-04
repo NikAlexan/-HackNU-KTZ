@@ -14,7 +14,7 @@ from app.models import GeneratedReading
 
 logger = logging.getLogger(__name__)
 
-_INTERVAL_SEC = 300  # 5 minutes
+_INTERVAL_SEC = 60  # 1 minute
 
 
 async def _build_aggregate(period_start: datetime, period_end: datetime) -> dict:

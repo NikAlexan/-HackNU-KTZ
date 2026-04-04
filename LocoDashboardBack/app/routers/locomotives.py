@@ -1,15 +1,62 @@
 """
-GET /api/locomotives          — list all with health
-GET /api/locomotives/{id}     — details + recent aggregates
+POST /api/locomotives/register — one-time registration from loco-app (Bearer protected)
+GET  /api/locomotives          — list all with health
+GET  /api/locomotives/{id}     — details + recent aggregates
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Security
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
-from app.models import Locomotive, TelemetryAggregate
+from app.models import Locomotive, LocoStatus, LocoType, TelemetryAggregate
+from app.routers.ingest import _API_KEY
 
 router = APIRouter()
+
+_bearer = HTTPBearer()
+
+_TYPE_MAP = {"electro": LocoType.ELECTRIC, "diesel": LocoType.DIESEL}
+
+
+def _verify_token(creds: HTTPAuthorizationCredentials = Security(_bearer)) -> None:
+    if creds.credentials != _API_KEY:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+
+class RegisterPayload(BaseModel):
+    loco_id: str
+    loco_type: str
+    loco_series: str
+
+
+@router.post("/locomotives/register", status_code=200, dependencies=[Depends(_verify_token)])
+async def register_locomotive(
+    payload: RegisterPayload,
+    session: AsyncSession = Depends(get_session),
+) -> dict:
+    existing = await session.get(Locomotive, payload.loco_id)
+    if existing:
+        return {"status": "already_registered"}
+
+    loco_type = _TYPE_MAP.get(payload.loco_type.lower())
+    if loco_type is None:
+        raise HTTPException(status_code=422, detail=f"Unknown loco_type: {payload.loco_type}")
+
+    session.add(Locomotive(
+        id=payload.loco_id,
+        series=payload.loco_series,
+        number=payload.loco_id,
+        type=loco_type,
+        driver="Unknown",
+        status=LocoStatus.STOPPED,
+        health_index=100.0,
+        health_grade="A",
+    ))
+    await session.commit()
+    return {"status": "registered"}
+
 
 
 @router.get("/locomotives")

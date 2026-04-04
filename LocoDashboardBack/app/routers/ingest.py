@@ -12,7 +12,7 @@ from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_session
-from app.models import TelemetryAggregate
+from app.models import HealthGrade, Locomotive, LocoStatus, TelemetryAggregate
 
 router = APIRouter()
 
@@ -33,7 +33,7 @@ class LocoAggregate(BaseModel):
     max_temp_c: float
     min_voltage_kv: float | None = None
     avg_health_index: float
-    final_health_grade: str
+    final_health_grade: HealthGrade
     error_count: int
 
 
@@ -68,4 +68,11 @@ async def receive_aggregate(
                 error_count=loco.error_count,
             )
         )
+
+        db_loco = await session.get(Locomotive, loco.loco_id)
+        if db_loco is not None:
+            db_loco.status = LocoStatus.IN_MOTION if loco.avg_speed_kmh > 1.0 else LocoStatus.STOPPED
+            db_loco.health_index = loco.avg_health_index
+            db_loco.health_grade = HealthGrade(loco.final_health_grade)
+
     await session.commit()

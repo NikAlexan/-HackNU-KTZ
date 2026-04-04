@@ -32,6 +32,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - loco_shared
+
+networks:
+  loco_shared:
+    name: loco_shared
 
 volumes:
   dashboard_postgres_data:

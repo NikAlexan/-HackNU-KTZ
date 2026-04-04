@@ -133,36 +133,64 @@ def evolve_state(
         s["axle_loads"] = list(state["axle_loads"])
 
     dt_min = INTERVAL_MS / 1000 / 60
-    progress = step / total_steps
     t_sec = step * INTERVAL_MS / 1000
 
-    # Speed profile
-    if progress < 0.15:
-        target_speed = 120.0 * (progress / 0.15)
-    elif progress < 0.85:
-        target_speed = 120.0
-    else:
-        target_speed = 120.0 * (1.0 - (progress - 0.85) / 0.15)
-    s["speed"] = max(0.0, target_speed + _gauss(0, 1.5))
+    # Speed profile: two legs per cycle with a station stop in the middle
+    # Cycle: [0..TOTAL] split into two equal legs
+    # Each leg: 15% accel → 70% cruise → 15% brake → (between legs) 10% stop
+    #
+    # Leg phases (within half-cycle):
+    #   0.00–0.15 : acceleration
+    #   0.15–0.80 : cruise
+    #   0.80–0.95 : braking
+    #   0.95–1.00 : station stop  (shared as gap between legs in full cycle)
+    #
+    # Full cycle mapping (0..1):
+    #   leg1 : 0.00 – 0.45  (45 % of cycle)
+    #   stop1: 0.45 – 0.50  ( 5 % of cycle)
+    #   leg2 : 0.50 – 0.95  (45 % of cycle)
+    #   stop2: 0.95 – 1.00  ( 5 % of cycle)
 
-    # Traction mode
-    if progress < 0.15:
-        traction_mode = "TRACTION"
-    elif progress > 0.85:
-        traction_mode = "BRAKE"
+    progress = (step % total_steps) / total_steps
+
+    def _leg_speed(leg_p: float) -> tuple[float, str]:
+        """Given progress within a leg [0,1], return (target_speed, traction_mode)."""
+        if leg_p < 0.15:
+            return 120.0 * (leg_p / 0.15), "TRACTION"
+        elif leg_p < 0.80:
+            return 120.0, "TRACTION"
+        elif leg_p < 0.95:
+            return 120.0 * (1.0 - (leg_p - 0.80) / 0.15), "BRAKE"
+        else:
+            return 0.0, "IDLE"
+
+    if progress < 0.45:
+        leg_p = progress / 0.45
+        target_speed, traction_mode = _leg_speed(leg_p)
+        km_position = int(leg_p * 60)
+    elif progress < 0.50:
+        target_speed, traction_mode = 0.0, "IDLE"
+        km_position = 60
+    elif progress < 0.95:
+        leg_p = (progress - 0.50) / 0.45
+        target_speed, traction_mode = _leg_speed(leg_p)
+        km_position = 60 + int(leg_p * 60)
     else:
-        traction_mode = "TRACTION" if s["speed"] > 5 else "IDLE"
+        target_speed, traction_mode = 0.0, "IDLE"
+        km_position = 120
+
+    s["speed"] = max(0.0, target_speed + _gauss(0, 1.5))
 
     # Brake pressure
     if traction_mode == "BRAKE":
         s["brake"] = min(6.2, state["brake"] + _gauss(0.05, 0.01))
+    elif traction_mode == "IDLE":
+        s["brake"] = min(6.0, state["brake"] + _gauss(0.02, 0.01))
     else:
         s["brake"] = max(4.6, state["brake"] + _gauss(-0.01, 0.01))
     s["brake"] = round(max(3.0, min(7.0, s["brake"])), 2)
 
     s["battery"] = round(109.0 + _gauss(0, 0.5), 1)
-
-    km_position = int(progress * 15)
 
     if loco_type == "electro":
         catenary_v = 25.0 + _gauss(0, 0.15)
