@@ -21,10 +21,10 @@ async def lifespan(app: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="LocoApp", lifespan=lifespan)
+app = FastAPI(title="LocoAppBack", lifespan=lifespan)
 app.include_router(ws_router)
 
 
 @app.get("/")
 async def root():
-    return {"service": "LocoApp", "status": "ok"}
+    return {"service": "LocoAppBack", "status": "ok"}
