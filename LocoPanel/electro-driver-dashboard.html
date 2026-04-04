@@ -1,0 +1,855 @@
+
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08111e;--bg2:#0d1a2e;--bg3:#112038;--bg4:#162840;
+  --acc:#7c3aed;--acc2:#a78bfa;--acc3:#4ade80;--acc4:#facc15;--acc5:#f87171;
+  --wire:#c4b5fd;--energy:#34d399;
+  --text:#e2e8f0;--text2:#94a3b8;--muted:#334155;
+  --border:rgba(124,58,237,0.18);
+}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+.dash{display:grid;grid-template-rows:auto 1fr auto;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:9px 18px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.loco-id{font-size:15px;font-weight:700;color:var(--acc2);letter-spacing:2px;font-family:'JetBrains Mono',monospace}
+.tagline{font-size:10px;color:var(--text2);margin-top:1px}
+.live{display:flex;align-items:center;gap:6px;font-size:10px;color:var(--energy);font-family:'JetBrains Mono',monospace}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--energy);animation:p 1.4s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.2}}
+.main{display:grid;grid-template-columns:200px 1fr 200px;grid-template-rows:1fr auto 130px;gap:10px;padding:10px}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:12px;position:relative;overflow:hidden}
+.panel::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.5}
+.plabel{font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:8px}
+.center{grid-column:2;grid-row:1;display:flex;flex-direction:column;gap:8px}
+.voltage-ring{display:flex;flex-direction:column;align-items:center;background:var(--bg3);border-radius:8px;border:1px solid var(--border);padding:14px}
+.ring-wrap{position:relative;width:150px;height:150px}
+.ring-wrap svg{width:150px;height:150px}
+.ring-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.big-num{font-size:36px;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace;color:var(--acc2)}
+.big-unit{font-size:10px;color:var(--text2);letter-spacing:2px;margin-top:2px}
+.big-sub{font-size:9px;color:var(--acc4);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.energy-bar-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--bg3);border-radius:5px;border:1px solid rgba(255,255,255,0.04)}
+.ebar-icon{font-size:13px;width:24px;text-align:center}
+.ebar-info{flex:1;min-width:0}
+.ebar-name{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.ebar-val{font-size:16px;font-weight:600;font-family:'JetBrains Mono',monospace;line-height:1.2}
+.ebar-track{height:3px;background:rgba(255,255,255,0.06);border-radius:2px;margin-top:3px}
+.ebar-fill{height:100%;border-radius:2px}
+.v-p{color:var(--acc2)}.v-g{color:var(--energy)}.v-y{color:var(--acc4)}.v-r{color:var(--acc5)}
+.f-p{background:var(--acc)}.f-g{background:var(--energy)}.f-y{background:var(--acc4)}.f-r{background:var(--acc5)}
+.speed-col{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:7px}
+.speed-big{text-align:center;padding:10px 6px;background:var(--bg3);border-radius:6px;border:1px solid var(--border)}
+.speed-num{font-size:48px;font-weight:700;color:var(--acc2);line-height:1;font-family:'JetBrains Mono',monospace}
+.speed-kmh{font-size:10px;color:var(--text2);letter-spacing:2px}
+.speed-lim{font-size:11px;color:var(--acc4);margin-top:3px;font-family:'JetBrains Mono',monospace}
+.motor-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.motor-item{background:var(--bg3);border-radius:4px;padding:6px 7px;border:1px solid rgba(255,255,255,0.04)}
+.motor-lbl{font-size:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.motor-val{font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace;line-height:1.3}
+.right-col{grid-column:3;grid-row:1;display:flex;flex-direction:column;gap:7px}
+.health-box{text-align:center;padding:8px;background:rgba(52,211,153,0.06);border:1px solid rgba(52,211,153,0.2);border-radius:6px}
+.health-num{font-size:30px;font-weight:700;color:var(--energy);font-family:'JetBrains Mono',monospace}
+.health-grade{font-size:10px;letter-spacing:3px;color:var(--energy)}
+.alert-list{display:flex;flex-direction:column;gap:4px;flex:1}
+.al{display:flex;align-items:start;gap:6px;padding:5px 7px;border-radius:4px;font-size:10px;line-height:1.4}
+.al.ok{background:rgba(52,211,153,.07);border-left:2px solid var(--energy)}
+.al.warn{background:rgba(250,204,21,.07);border-left:2px solid var(--acc4)}
+.al.crit{background:rgba(248,113,113,.08);border-left:2px solid var(--acc5)}
+.al-dot{width:5px;height:5px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.al.ok .al-dot{background:var(--energy)}.al.warn .al-dot{background:var(--acc4)}.al.crit .al-dot{background:var(--acc5)}
+.regen-box{display:flex;align-items:center;gap:10px;padding:8px 10px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);border-radius:6px}
+.regen-ico{font-size:18px}
+.regen-val{font-size:22px;font-weight:700;color:var(--energy);font-family:'JetBrains Mono',monospace;line-height:1}
+.regen-lbl{font-size:9px;color:var(--text2);text-transform:uppercase;letter-spacing:1px}
+.footer{padding:7px 18px;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)}
+.footer span{color:var(--acc2)}
+.lang-btn{display:flex;align-items:center;border-radius:6px;overflow:hidden;border:1px solid rgba(167,139,250,0.3);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1px}
+.lang-btn button{background:transparent;border:none;color:var(--text2);padding:4px 10px;cursor:pointer;transition:background 0.2s,color 0.2s}
+.lang-btn button.active{background:var(--acc);color:#fff}
+.lang-btn .sep{width:1px;background:rgba(167,139,250,0.2);align-self:stretch}
+
+/* Locomotive diagram */
+.loco-diagram-panel{grid-column:1/-1;grid-row:2;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px 16px;position:relative;overflow:hidden}
+.loco-diagram-panel::after{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--acc),transparent);opacity:.5}
+.loco-diagram-wrap{display:flex;align-items:center;gap:16px}
+.loco-svg-wrap{flex:1;display:flex;justify-content:center}
+.loco-legend{display:flex;flex-direction:column;gap:4px;min-width:165px}
+.legend-item{display:flex;align-items:center;gap:6px;font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:1px;color:var(--text2)}
+.legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;border:1px solid transparent}
+
+/* Part animations */
+.loco-part{transition:stroke 0.35s ease,stroke-width 0.35s ease,filter 0.35s ease,opacity 0.35s ease}
+@keyframes blink-crit{0%,100%{opacity:1}50%{opacity:0.6}}
+</style>
+
+<div class="dash">
+  <div class="topbar">
+    <div>
+      <div class="loco-id">КЗ8А · №0021 &nbsp;•&nbsp; <span style="color:var(--acc4);font-size:12px">25кВ AC</span></div>
+      <div class="tagline" data-i18n="tagline">Машинист: Алтынбеков Р.М. &nbsp;|&nbsp; Нур-Султан → Кокшетау</div>
+    </div>
+    <div class="live">
+      <div class="dot"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span id="clk">—</span>
+        <div class="lang-btn">
+          <button id="btn-ru" class="active" onclick="setLang('ru')">РУ</button>
+          <div class="sep"></div>
+          <button id="btn-kz" onclick="setLang('kz')">ҚАЗ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- LEFT -->
+    <div class="panel speed-col">
+      <div class="plabel" data-i18n="speed">Скорость</div>
+      <div class="speed-big">
+        <div class="speed-num" id="spd">104</div>
+        <div class="speed-kmh" data-i18n="kmh">КМ/Ч</div>
+        <div class="speed-lim" data-i18n="speed_lim">▲ ЛИМ 120</div>
+      </div>
+      <div class="plabel" style="margin-top:4px" data-i18n="traction_motors">Тяговые двигатели</div>
+      <div class="motor-grid">
+        <div class="motor-item"><div class="motor-lbl" data-i18n="td1_cur">ТД1 ток</div><div class="motor-val v-g" id="td1cur">412А</div></div>
+        <div class="motor-item"><div class="motor-lbl" data-i18n="td2_cur">ТД2 ток</div><div class="motor-val v-g" id="td2cur">408А</div></div>
+        <div class="motor-item"><div class="motor-lbl" data-i18n="td3_cur">ТД3 ток</div><div class="motor-val v-g" id="td3cur">415А</div></div>
+        <div class="motor-item"><div class="motor-lbl" data-i18n="td4_cur">ТД4 ток</div><div class="motor-val v-y" id="td4cur">431А</div></div>
+        <div class="motor-item"><div class="motor-lbl" data-i18n="td1_temp">ТД1 °C</div><div class="motor-val v-g" id="td1temp">74°</div></div>
+        <div class="motor-item"><div class="motor-lbl" data-i18n="td4_temp">ТД4 °C</div><div class="motor-val v-y" id="td4temp">82°</div></div>
+      </div>
+      <div class="plabel" style="margin-top:6px" data-i18n="km_pos">Позиция КМ</div>
+      <div style="display:flex;gap:5px;flex-wrap:wrap">
+        <div style="padding:4px 10px;background:rgba(124,58,237,0.15);border:1px solid var(--acc);border-radius:4px;font-size:13px;font-weight:600;color:var(--acc2);font-family:'JetBrains Mono',monospace">П-8</div>
+        <div style="padding:4px 10px;background:var(--bg3);border:1px solid rgba(255,255,255,0.05);border-radius:4px;font-size:11px;color:var(--text2)" data-i18n="traction">ТЯГА</div>
+      </div>
+    </div>
+
+    <!-- CENTER -->
+    <div class="center">
+      <div class="voltage-ring">
+        <div class="plabel" style="text-align:center;margin-bottom:6px" data-i18n="contact_net">Контактная сеть</div>
+        <div class="ring-wrap">
+          <svg viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="62" fill="none" stroke="rgba(124,58,237,0.1)" stroke-width="11"/>
+            <circle cx="75" cy="75" r="62" fill="none" stroke="rgba(124,58,237,0.12)" stroke-width="11" stroke-dasharray="323" stroke-dashoffset="65" stroke-linecap="round" transform="rotate(-210 75 75)"/>
+            <circle cx="75" cy="75" r="62" fill="none" stroke="#7c3aed" stroke-width="11" stroke-dasharray="323" stroke-dashoffset="129" stroke-linecap="round" transform="rotate(-210 75 75)" id="varc"/>
+          </svg>
+          <div class="ring-val">
+            <div class="big-num" id="vlt">24.8</div>
+            <div class="big-unit">кВ</div>
+            <div class="big-sub" data-i18n="norm">НОРМА</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;font-size:10px">
+          <div style="text-align:center"><div style="color:var(--text2)" data-i18n="current">Ток</div><div style="color:var(--acc2);font-family:'JetBrains Mono',monospace;font-weight:600" id="cur">680А</div></div>
+          <div style="width:1px;background:var(--border)"></div>
+          <div style="text-align:center"><div style="color:var(--text2)" data-i18n="power">Мощность</div><div id="powerVal" style="color:var(--acc2);font-family:'JetBrains Mono',monospace;font-weight:600">19.4кВт</div></div>
+          <div style="width:1px;background:var(--border)"></div>
+          <div style="text-align:center"><div style="color:var(--text2)">cos φ</div><div style="color:var(--energy);font-family:'JetBrains Mono',monospace;font-weight:600">0.92</div></div>
+        </div>
+      </div>
+      <div class="regen-box">
+        <div class="regen-ico">♻</div>
+        <div><div class="regen-val" id="regen">2.4 МВт</div><div class="regen-lbl" data-i18n="regen_active">Рекуперация активна</div></div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:10px;color:var(--text2)" data-i18n="returned">Возвращено</div>
+          <div style="font-size:13px;color:var(--energy);font-family:'JetBrains Mono',monospace">+184 кВт·ч</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="energy-bar-row"><div class="ebar-icon">🔌</div><div class="ebar-info"><div class="ebar-name" data-i18n="pantograph">Пантограф</div><div class="ebar-val v-g" id="pantographState" data-i18n="raised">ПОДНЯТ</div><div class="ebar-track"><div class="ebar-fill f-g" id="pantographBar" style="width:100%"></div></div></div></div>
+        <div class="energy-bar-row"><div class="ebar-icon">🌡</div><div class="ebar-info"><div class="ebar-name" data-i18n="transformer_temp">Т трансформ.</div><div class="ebar-val v-g" id="transformerTemp">71°C</div><div class="ebar-track"><div class="ebar-fill f-g" id="transformerBar" style="width:59%"></div></div></div></div>
+        <div class="energy-bar-row"><div class="ebar-icon">⚡</div><div class="ebar-info"><div class="ebar-name" data-i18n="battery">АКБ борт.</div><div class="ebar-val v-y" id="batteryVal">109.2В</div><div class="ebar-track"><div class="ebar-fill f-y" id="batteryBar" style="width:84%"></div></div></div></div>
+        <div class="energy-bar-row"><div class="ebar-icon">❄</div><div class="ebar-info"><div class="ebar-name" data-i18n="cooling">Охлаждение</div><div class="ebar-val v-g" data-i18n="norm2">НОРМА</div><div class="ebar-track"><div class="ebar-fill f-g" style="width:72%"></div></div></div></div>
+      </div>
+      <div class="energy-bar-row"><div class="ebar-icon">🛑</div><div class="ebar-info"><div class="ebar-name" data-i18n="brake_pressure">Давление тормозов</div><div class="ebar-val v-g"><span id="pressureVal">5.4 атм</span> &nbsp;<span id="pressureStatus" style="color:var(--text2);font-size:11px" data-i18n="norm3">НОРМА</span></div><div class="ebar-track"><div class="ebar-fill f-g" id="pressureBar" style="width:75%"></div></div></div><div style="font-size:10px;color:var(--text2);margin-left:4px" data-i18n="ept_ok">ЭПТ ОК</div></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="panel right-col">
+      <div class="plabel" data-i18n="health_idx">Индекс здоровья</div>
+      <div class="health-box"><div class="health-num" id="healthIdx">95</div><div class="health-grade" id="healthGrade" data-i18n="health_grade">A • ОТЛИЧНО</div></div>
+      <div class="plabel" style="margin-top:8px" data-i18n="alerts">Алерты</div>
+      <div class="alert-list">
+        <div class="al warn"><div class="al-dot"></div><span data-i18n="alert1">ТД4: ток +5% выше среднего</span></div>
+        <div class="al warn"><div class="al-dot"></div><span data-i18n="alert2">ТД4: Т обмотки 82°C ↑</span></div>
+        <div class="al ok"><div class="al-dot"></div><span data-i18n="alert3">Рекуперация 2.4 МВт — норма</span></div>
+        <div class="al ok"><div class="al-dot"></div><span data-i18n="alert4">Трансформатор 71°C — норма</span></div>
+        <div class="al ok"><div class="al-dot"></div><span data-i18n="alert5">ЭПТ / пневматика — норма</span></div>
+        <div class="al ok"><div class="al-dot"></div><span data-i18n="alert6">СКИФ / КЛУБ-У — норма</span></div>
+      </div>
+      <div class="plabel" style="margin-top:8px" data-i18n="route">Маршрут</div>
+      <div style="font-size:10px;display:flex;flex-direction:column;gap:3px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="traveled">Пройдено</span><span style="color:var(--energy);font-family:'JetBrains Mono',monospace">168/305 км</span></div>
+        <div style="height:3px;background:rgba(255,255,255,0.06);border-radius:2px"><div style="width:55%;height:100%;background:var(--energy);border-radius:2px"></div></div>
+        <div style="display:flex;justify-content:space-between;margin-top:1px"><span style="color:var(--text2)" data-i18n="arrival">Прибытие</span><span style="color:var(--acc4);font-family:'JetBrains Mono',monospace">13:58</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="next_stop">Следующий ост.</span><span style="font-family:'JetBrains Mono',monospace">22 км</span></div>
+      </div>
+    </div>
+
+    <!-- KZ8A LOCOMOTIVE DIAGRAM -->
+    <div class="loco-diagram-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="plabel" style="margin-bottom:0" data-i18n="loco_diagram">Схема локомотива КЗ8А</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px">ДИАГНОСТИКА</div>
+      </div>
+      <div class="loco-diagram-wrap">
+        <div class="loco-svg-wrap">
+          <!-- KZ8A Electric Locomotive — Detailed Technical SVG -->
+          <svg id="loco-svg" viewBox="0 0 900 200" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:820px;height:165px">
+            <defs>
+              <linearGradient id="bodyGradE" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#1e3060"/>
+                <stop offset="50%" style="stop-color:#142248"/>
+                <stop offset="100%" style="stop-color:#0b1628"/>
+              </linearGradient>
+              <linearGradient id="cabGradE" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#223575"/>
+                <stop offset="100%" style="stop-color:#0d1a3a"/>
+              </linearGradient>
+              <linearGradient id="roofGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#162040"/>
+                <stop offset="100%" style="stop-color:#0e1830"/>
+              </linearGradient>
+              <linearGradient id="bogieGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#0f1c35"/>
+                <stop offset="100%" style="stop-color:#070e1a"/>
+              </linearGradient>
+              <filter id="glowP" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="2.5" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="glowY" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="3" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="glowG" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="3" result="b"/>
+                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+            </defs>
+
+            <!-- === RAILS === -->
+            <rect x="0" y="184" width="900" height="4" rx="1" fill="#0c1a2e"/>
+            <rect x="0" y="187" width="900" height="3" rx="1" fill="#070e1a"/>
+            <!-- Rail ties -->
+            <rect x="20"  y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="80"  y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="140" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="200" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="270" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="340" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="410" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="480" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="550" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="620" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="690" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="760" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="830" y="183" width="8" height="6" rx="1" fill="#0a1525"/>
+
+            <!-- === CONTACT WIRE === -->
+            <line x1="5" y1="6" x2="895" y2="6" stroke="rgba(167,139,250,0.5)" stroke-width="1.5"/>
+            <!-- wire insulators -->
+            <rect x="200" y="3" width="6" height="6" rx="1" fill="rgba(167,139,250,0.6)"/>
+            <rect x="450" y="3" width="6" height="6" rx="1" fill="rgba(167,139,250,0.6)"/>
+            <rect x="700" y="3" width="6" height="6" rx="1" fill="rgba(167,139,250,0.6)"/>
+
+            <!-- === PANTOGRAPH === -->
+            <!-- Pantograph 1 (front) -->
+            <g id="panto1-group">
+              <line x1="290" y1="6"  x2="265" y2="28" stroke="rgba(167,139,250,0.7)" stroke-width="1.5"/>
+              <line x1="290" y1="6"  x2="315" y2="28" stroke="rgba(167,139,250,0.7)" stroke-width="1.5"/>
+              <line x1="260" y1="28" x2="320" y2="28" stroke="rgba(167,139,250,0.9)" stroke-width="2"/>
+              <line x1="265" y1="28" x2="258" y2="36" stroke="rgba(167,139,250,0.5)" stroke-width="1.2"/>
+              <line x1="315" y1="28" x2="322" y2="36" stroke="rgba(167,139,250,0.5)" stroke-width="1.2"/>
+              <rect id="part-pantograph" class="loco-part" x="255" y="36" width="70" height="8" rx="2" fill="#1a2848" stroke="rgba(167,139,250,0.5)" stroke-width="1"/>
+            </g>
+            <!-- Pantograph 2 (rear) -->
+            <g id="panto2-group">
+              <line x1="600" y1="6"  x2="575" y2="28" stroke="rgba(167,139,250,0.5)" stroke-width="1.2"/>
+              <line x1="600" y1="6"  x2="625" y2="28" stroke="rgba(167,139,250,0.5)" stroke-width="1.2"/>
+              <line x1="570" y1="28" x2="630" y2="28" stroke="rgba(167,139,250,0.7)" stroke-width="1.5"/>
+              <line x1="575" y1="28" x2="568" y2="36" stroke="rgba(167,139,250,0.4)" stroke-width="1"/>
+              <line x1="625" y1="28" x2="632" y2="36" stroke="rgba(167,139,250,0.4)" stroke-width="1"/>
+              <rect x="565" y="36" width="70" height="8" rx="2" fill="#1a2848" stroke="rgba(167,139,250,0.35)" stroke-width="1"/>
+            </g>
+
+            <!-- === ROOF EQUIPMENT === -->
+            <!-- High voltage bus line on roof -->
+            <rect x="185" y="44" width="530" height="4" rx="1" fill="rgba(124,58,237,0.2)" stroke="rgba(124,58,237,0.3)" stroke-width="0.5"/>
+            <!-- Roof vents / cooling grilles -->
+            <rect id="part-cooling" class="loco-part" x="220" y="40" width="460" height="14" rx="3" fill="#112038" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+            <!-- vent grid lines -->
+            <line x1="255" y1="41" x2="255" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="280" y1="41" x2="280" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="305" y1="41" x2="305" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="330" y1="41" x2="330" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="355" y1="41" x2="355" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="380" y1="41" x2="380" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="430" y1="41" x2="430" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="455" y1="41" x2="455" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="480" y1="41" x2="480" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="505" y1="41" x2="505" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="530" y1="41" x2="530" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="555" y1="41" x2="555" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="580" y1="41" x2="580" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="620" y1="41" x2="620" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <line x1="645" y1="41" x2="645" y2="53" stroke="rgba(124,58,237,0.18)" stroke-width="1"/>
+            <text x="405" y="50" text-anchor="middle" fill="rgba(167,139,250,0.5)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="1.5">ОХЛАЖДЕНИЕ</text>
+
+            <!-- === MAIN BODY FRAME === -->
+            <rect id="part-body" class="loco-part" x="45" y="54" width="810" height="118" rx="5" fill="url(#bodyGradE)" stroke="rgba(124,58,237,0.22)" stroke-width="1.2"/>
+            <!-- Underframe -->
+            <rect x="45" y="154" width="810" height="14" rx="2" fill="#0a1020" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <!-- Top accent stripe (КЗ8А blue) -->
+            <rect x="45" y="54" width="810" height="6" rx="0" fill="rgba(59,130,246,0.22)"/>
+            <!-- Side accent stripe -->
+            <rect x="45" y="130" width="810" height="3" fill="rgba(124,58,237,0.15)"/>
+
+            <!-- === EQUIPMENT CABINETS (шкафы электрооборудования) === -->
+            <!-- Cab A equipment rack -->
+            <rect x="185" y="60" width="38" height="90" rx="2" fill="#0e1c36" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+            <line x1="185" y1="80" x2="223" y2="80" stroke="rgba(124,58,237,0.1)" stroke-width="0.8"/>
+            <line x1="185" y1="100" x2="223" y2="100" stroke="rgba(124,58,237,0.1)" stroke-width="0.8"/>
+            <line x1="185" y1="120" x2="223" y2="120" stroke="rgba(124,58,237,0.1)" stroke-width="0.8"/>
+            <text x="204" y="72" text-anchor="middle" fill="rgba(167,139,250,0.4)" font-family="JetBrains Mono,monospace" font-size="5.5" letter-spacing="0.5">ШЭО</text>
+
+            <!-- === TRANSFORMER (центральный, большой) === -->
+            <rect id="part-transformer" class="loco-part" x="228" y="57" width="165" height="96" rx="3" fill="#112038" stroke="rgba(124,58,237,0.25)" stroke-width="1.2"/>
+            <!-- Transformer internals detail -->
+            <rect x="234" y="63" width="153" height="84" rx="2" fill="rgba(124,58,237,0.04)"/>
+            <line x1="258" y1="63" x2="258" y2="141" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <line x1="284" y1="63" x2="284" y2="141" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <line x1="310" y1="63" x2="310" y2="141" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <line x1="336" y1="63" x2="336" y2="141" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <line x1="362" y1="63" x2="362" y2="141" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <!-- transformer coil symbols -->
+            <ellipse cx="271" cy="95" rx="9" ry="14" fill="none" stroke="rgba(124,58,237,0.2)" stroke-width="1.2"/>
+            <ellipse cx="297" cy="95" rx="9" ry="14" fill="none" stroke="rgba(124,58,237,0.2)" stroke-width="1.2"/>
+            <ellipse cx="323" cy="95" rx="9" ry="14" fill="none" stroke="rgba(124,58,237,0.2)" stroke-width="1.2"/>
+            <ellipse cx="349" cy="95" rx="9" ry="14" fill="none" stroke="rgba(124,58,237,0.2)" stroke-width="1.2"/>
+            <text x="310" y="73" text-anchor="middle" fill="rgba(167,139,250,0.55)" font-family="JetBrains Mono,monospace" font-size="7" letter-spacing="1.5">ТРАНСФОРМАТОР</text>
+            <text x="310" y="142" text-anchor="middle" fill="rgba(124,58,237,0.4)" font-family="JetBrains Mono,monospace" font-size="6">25кВ / 1800В</text>
+
+            <!-- === INVERTERS (преобразователи) === -->
+            <rect id="part-motors" class="loco-part" x="398" y="57" width="220" height="96" rx="3" fill="#112038" stroke="rgba(124,58,237,0.22)" stroke-width="1.2"/>
+            <!-- Inverter blocks -->
+            <rect x="404" y="63" width="48" height="84" rx="2" fill="rgba(124,58,237,0.06)" stroke="rgba(124,58,237,0.12)" stroke-width="0.8"/>
+            <rect x="456" y="63" width="48" height="84" rx="2" fill="rgba(124,58,237,0.06)" stroke="rgba(124,58,237,0.12)" stroke-width="0.8"/>
+            <rect x="508" y="63" width="48" height="84" rx="2" fill="rgba(124,58,237,0.06)" stroke="rgba(124,58,237,0.12)" stroke-width="0.8"/>
+            <rect x="560" y="63" width="52" height="84" rx="2" fill="rgba(124,58,237,0.06)" stroke="rgba(124,58,237,0.12)" stroke-width="0.8"/>
+            <!-- Inverter labels -->
+            <text x="428" y="108" text-anchor="middle" fill="rgba(167,139,250,0.45)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ИНВ1</text>
+            <text x="480" y="108" text-anchor="middle" fill="rgba(167,139,250,0.45)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ИНВ2</text>
+            <text x="532" y="108" text-anchor="middle" fill="rgba(167,139,250,0.45)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ИНВ3</text>
+            <text x="586" y="108" text-anchor="middle" fill="rgba(167,139,250,0.4)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ИНВ4</text>
+            <text x="508" y="70" text-anchor="middle" fill="rgba(167,139,250,0.55)" font-family="JetBrains Mono,monospace" font-size="7" letter-spacing="1">ТД / ИНВЕРТОРЫ</text>
+
+            <!-- === BRAKE RESISTORS (реостатное торможение) === -->
+            <rect id="part-regen" class="loco-part" x="624" y="60" width="82" height="52" rx="3" fill="#112038" stroke="rgba(52,211,153,0.2)" stroke-width="1"/>
+            <!-- resistor grid pattern -->
+            <line x1="634" y1="68" x2="696" y2="68" stroke="rgba(52,211,153,0.15)" stroke-width="0.8"/>
+            <line x1="634" y1="76" x2="696" y2="76" stroke="rgba(52,211,153,0.15)" stroke-width="0.8"/>
+            <line x1="634" y1="84" x2="696" y2="84" stroke="rgba(52,211,153,0.15)" stroke-width="0.8"/>
+            <line x1="634" y1="92" x2="696" y2="92" stroke="rgba(52,211,153,0.15)" stroke-width="0.8"/>
+            <line x1="644" y1="63" x2="644" y2="108" stroke="rgba(52,211,153,0.1)" stroke-width="0.8"/>
+            <line x1="660" y1="63" x2="660" y2="108" stroke="rgba(52,211,153,0.1)" stroke-width="0.8"/>
+            <line x1="676" y1="63" x2="676" y2="108" stroke="rgba(52,211,153,0.1)" stroke-width="0.8"/>
+            <text x="665" y="100" text-anchor="middle" fill="rgba(52,211,153,0.5)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">РЕКУП.</text>
+
+            <!-- === BATTERY / AUX BOX === -->
+            <rect x="624" y="116" width="82" height="36" rx="3" fill="#0e1c36" stroke="rgba(250,204,21,0.15)" stroke-width="1"/>
+            <text x="665" y="133" text-anchor="middle" fill="rgba(250,204,21,0.4)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">АКБ</text>
+            <text x="665" y="143" text-anchor="middle" fill="rgba(250,204,21,0.3)" font-family="JetBrains Mono,monospace" font-size="5.5">110В / 84%</text>
+
+            <!-- === BRAKES (pneumatic) === -->
+            <rect id="part-brakes" class="loco-part" x="710" y="115" width="75" height="37" rx="3" fill="#112038" stroke="rgba(124,58,237,0.12)" stroke-width="1"/>
+            <text x="747" y="130" text-anchor="middle" fill="rgba(124,58,237,0.4)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ПНЕВМ.</text>
+            <text x="747" y="141" text-anchor="middle" fill="rgba(124,58,237,0.35)" font-family="JetBrains Mono,monospace" font-size="5.5">ТОРМОЗА</text>
+            <!-- pressure gauge icon -->
+            <circle cx="730" cy="123" r="4" fill="none" stroke="rgba(124,58,237,0.3)" stroke-width="0.8"/>
+            <line x1="730" y1="123" x2="732" y2="120" stroke="rgba(124,58,237,0.4)" stroke-width="0.8"/>
+
+            <!-- === CAB A — detailed (машинист кабина А) === -->
+            <path id="part-cab" class="loco-part" d="M45,64 Q48,42 82,40 L188,40 L188,168 L45,168 Z" fill="url(#cabGradE)" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+            <!-- cab windows (2 front) -->
+            <rect x="58" y="54" width="48" height="30" rx="4" fill="rgba(59,130,246,0.09)" stroke="rgba(167,139,250,0.4)" stroke-width="1.2"/>
+            <rect x="113" y="54" width="48" height="30" rx="4" fill="rgba(59,130,246,0.07)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
+            <!-- windshield wiper lines -->
+            <line x1="60" y1="82" x2="104" y2="82" stroke="rgba(167,139,250,0.2)" stroke-width="0.8"/>
+            <!-- headlights -->
+            <ellipse cx="58"  cy="47" rx="7" ry="5" fill="rgba(250,204,21,0.75)" filter="url(#glowP)"/>
+            <ellipse cx="78"  cy="47" rx="7" ry="5" fill="rgba(250,204,21,0.75)" filter="url(#glowP)"/>
+            <!-- marker lights -->
+            <circle cx="50" cy="58" r="3" fill="rgba(248,113,113,0.6)" filter="url(#glowY)"/>
+            <circle cx="50" cy="68" r="3" fill="rgba(248,113,113,0.6)" filter="url(#glowY)"/>
+            <!-- coupler -->
+            <rect x="38" y="152" width="12" height="12" rx="2" fill="#0a1525" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+            <rect x="34" y="155" width="8" height="6" rx="1" fill="#07111e"/>
+            <!-- cab label -->
+            <text x="118" y="108" text-anchor="middle" fill="rgba(167,139,250,0.6)" font-family="JetBrains Mono,monospace" font-size="7" letter-spacing="1">КАБ А</text>
+            <text x="118" y="118" text-anchor="middle" fill="rgba(167,139,250,0.3)" font-family="JetBrains Mono,monospace" font-size="5.5">МАШИНИСТ</text>
+            <!-- cab side door outline -->
+            <rect x="160" y="95" width="22" height="45" rx="2" fill="none" stroke="rgba(124,58,237,0.15)" stroke-width="0.8"/>
+
+            <!-- === CAB B — detailed (вторичная кабина) === -->
+            <path id="part-cab2" class="loco-part" d="M855,64 Q852,42 818,40 L712,40 L712,168 L855,168 Z" fill="url(#cabGradE)" stroke="rgba(124,58,237,0.28)" stroke-width="1.5"/>
+            <rect x="700" y="54" width="48" height="30" rx="4" fill="rgba(59,130,246,0.07)" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
+            <rect x="754" y="54" width="48" height="30" rx="4" fill="rgba(59,130,246,0.09)" stroke="rgba(167,139,250,0.38)" stroke-width="1.2"/>
+            <line x1="756" y1="82" x2="800" y2="82" stroke="rgba(167,139,250,0.2)" stroke-width="0.8"/>
+            <ellipse cx="822" cy="47" rx="7" ry="5" fill="rgba(250,204,21,0.75)" filter="url(#glowP)"/>
+            <ellipse cx="842" cy="47" rx="7" ry="5" fill="rgba(250,204,21,0.75)" filter="url(#glowP)"/>
+            <circle cx="850" cy="58" r="3" fill="rgba(248,113,113,0.6)" filter="url(#glowY)"/>
+            <circle cx="850" cy="68" r="3" fill="rgba(248,113,113,0.6)" filter="url(#glowY)"/>
+            <rect x="850" y="152" width="12" height="12" rx="2" fill="#0a1525" stroke="rgba(124,58,237,0.2)" stroke-width="1"/>
+            <rect x="858" y="155" width="8" height="6" rx="1" fill="#07111e"/>
+            <text x="742" y="108" text-anchor="middle" fill="rgba(167,139,250,0.5)" font-family="JetBrains Mono,monospace" font-size="7" letter-spacing="1">КАБ Б</text>
+            <rect x="718" y="95" width="22" height="45" rx="2" fill="none" stroke="rgba(124,58,237,0.15)" stroke-width="0.8"/>
+
+            <!-- === BOGIES — detailed (3-осные тележки) === -->
+            <!-- Bogie 1 (left/front) -->
+            <g id="bogie1">
+              <rect x="55" y="164" width="155" height="16" rx="3" fill="url(#bogieGrad)" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+              <!-- axle boxes -->
+              <rect x="60"  y="161" width="18" height="8" rx="2" fill="#0b1628" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <rect x="109" y="161" width="18" height="8" rx="2" fill="#0b1628" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <rect x="158" y="161" width="18" height="8" rx="2" fill="#0b1628" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <!-- wheels with spokes -->
+              <circle cx="69"  cy="181" r="10" fill="#0a1525" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+              <circle cx="69"  cy="181" r="4.5" fill="#071020"/>
+              <line x1="69" y1="171" x2="69" y2="191" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <line x1="59" y1="181" x2="79" y2="181" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <circle cx="118" cy="181" r="10" fill="#0a1525" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+              <circle cx="118" cy="181" r="4.5" fill="#071020"/>
+              <line x1="118" y1="171" x2="118" y2="191" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <line x1="108" y1="181" x2="128" y2="181" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <circle cx="167" cy="181" r="10" fill="#0a1525" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+              <circle cx="167" cy="181" r="4.5" fill="#071020"/>
+              <line x1="167" y1="171" x2="167" y2="191" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <line x1="157" y1="181" x2="177" y2="181" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <!-- brake shoes -->
+              <rect x="62"  y="174" width="5" height="8" rx="1" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.2)" stroke-width="0.5"/>
+              <rect x="111" y="174" width="5" height="8" rx="1" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.2)" stroke-width="0.5"/>
+              <rect x="160" y="174" width="5" height="8" rx="1" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.2)" stroke-width="0.5"/>
+            </g>
+            <!-- Bogie 2 (right/rear) -->
+            <g id="bogie2">
+              <rect x="690" y="164" width="155" height="16" rx="3" fill="url(#bogieGrad)" stroke="rgba(124,58,237,0.25)" stroke-width="1"/>
+              <rect x="695" y="161" width="18" height="8" rx="2" fill="#0b1628" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <rect x="744" y="161" width="18" height="8" rx="2" fill="#0b1628" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <rect x="793" y="161" width="18" height="8" rx="2" fill="#0b1628" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <circle cx="704" cy="181" r="10" fill="#0a1525" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+              <circle cx="704" cy="181" r="4.5" fill="#071020"/>
+              <line x1="704" y1="171" x2="704" y2="191" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <line x1="694" y1="181" x2="714" y2="181" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <circle cx="753" cy="181" r="10" fill="#0a1525" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+              <circle cx="753" cy="181" r="4.5" fill="#071020"/>
+              <line x1="753" y1="171" x2="753" y2="191" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <line x1="743" y1="181" x2="763" y2="181" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <circle cx="802" cy="181" r="10" fill="#0a1525" stroke="rgba(124,58,237,0.35)" stroke-width="1.5"/>
+              <circle cx="802" cy="181" r="4.5" fill="#071020"/>
+              <line x1="802" y1="171" x2="802" y2="191" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <line x1="792" y1="181" x2="812" y2="181" stroke="rgba(124,58,237,0.2)" stroke-width="0.8"/>
+              <rect x="697" y="174" width="5" height="8" rx="1" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.2)" stroke-width="0.5"/>
+              <rect x="746" y="174" width="5" height="8" rx="1" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.2)" stroke-width="0.5"/>
+              <rect x="795" y="174" width="5" height="8" rx="1" fill="rgba(248,113,113,0.15)" stroke="rgba(248,113,113,0.2)" stroke-width="0.5"/>
+            </g>
+
+            <!-- === STATUS INDICATORS === -->
+            <!-- TD4 warning indicator -->
+            <circle cx="570" cy="64" r="5" fill="#facc15" opacity="0.9" id="ind-td4" filter="url(#glowY)"/>
+            <!-- pantograph ok indicator -->
+            <circle cx="290" cy="10" r="3.5" fill="#34d399" opacity="0.9" filter="url(#glowG)"/>
+            <!-- СКИФ antenna -->
+            <line x1="450" y1="40" x2="450" y2="30" stroke="rgba(167,139,250,0.3)" stroke-width="1"/>
+            <circle cx="450" cy="28" r="2" fill="rgba(167,139,250,0.5)"/>
+          </svg>
+        </div>
+
+        <!-- LEGEND -->
+        <div class="loco-legend">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;margin-bottom:4px" data-i18n="legend_title">СОСТОЯНИЕ УЗЛОВ</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(52,211,153,0.3);border-color:var(--energy)"></div><span data-i18n="legend_ok">Норма</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(250,204,21,0.4);border-color:var(--acc4)"></div><span data-i18n="legend_warn">Предупреждение</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(248,113,113,0.4);border-color:var(--acc5)"></div><span data-i18n="legend_crit">Критично</span></div>
+          <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:4px" data-i18n="legend_parts">УЗЛЫ</div>
+          <div class="legend-item"><div class="legend-dot" id="leg-motors" style="background:rgba(250,204,21,0.4);border-color:var(--acc4)"></div><span data-i18n="leg_motors">ТД / Инвертор</span></div>
+          <div class="legend-item"><div class="legend-dot" id="leg-transformer" style="background:rgba(52,211,153,0.3);border-color:var(--energy)"></div><span data-i18n="leg_transformer">Трансформатор</span></div>
+          <div class="legend-item"><div class="legend-dot" id="leg-pantograph" style="background:rgba(52,211,153,0.3);border-color:var(--energy)"></div><span data-i18n="leg_pantograph">Пантограф</span></div>
+          <div class="legend-item"><div class="legend-dot" id="leg-cooling" style="background:rgba(52,211,153,0.3);border-color:var(--energy)"></div><span data-i18n="leg_cooling">Охлаждение</span></div>
+          <div class="legend-item"><div class="legend-dot" id="leg-brakes" style="background:rgba(52,211,153,0.3);border-color:var(--energy)"></div><span data-i18n="leg_brakes">Тормоза</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM ROW -->
+    <div class="panel" style="grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:2fr 1fr 1fr;gap:0;padding:8px 14px">
+      <div>
+        <div class="plabel" data-i18n="chart_label">Скорость + рекуперация • 60 сек</div>
+        <div style="position:relative;height:80px"><canvas id="spdChart"></canvas></div>
+      </div>
+      <div style="border-left:1px solid var(--border);padding-left:12px;margin-left:10px">
+        <div class="plabel" data-i18n="td_currents">Токи ТД</div>
+        <div style="position:relative;height:80px"><canvas id="tdChart"></canvas></div>
+      </div>
+      <div style="border-left:1px solid var(--border);padding-left:12px;margin-left:10px">
+        <div class="plabel" data-i18n="speed_limits">Ограничения скорости</div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:10px;margin-top:2px">
+          <div style="padding:4px 8px;background:rgba(250,204,21,0.08);border-radius:4px;border-left:2px solid var(--acc4)">
+            <div style="color:var(--acc4);font-weight:600;font-family:'JetBrains Mono',monospace">100 км/ч</div>
+            <div style="color:var(--text2);font-size:9px" data-i18n="limit1_sub">через 8 км (кривая R=600)</div>
+          </div>
+          <div style="padding:4px 8px;background:rgba(124,58,237,0.07);border-radius:4px;border-left:2px solid var(--acc)">
+            <div style="color:var(--acc2);font-weight:600;font-family:'JetBrains Mono',monospace">120 км/ч</div>
+            <div style="color:var(--text2);font-size:9px" data-i18n="limit2_sub">текущий участок</div>
+          </div>
+          <div style="padding:4px 8px;background:rgba(52,211,153,0.06);border-radius:4px;border-left:2px solid var(--energy)">
+            <div style="color:var(--energy);font-weight:600;font-family:'JetBrains Mono',monospace">140 км/ч</div>
+            <div style="color:var(--text2);font-size:9px" data-i18n="limit3_sub">через 35 км (перегон)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span data-i18n="footer_left">КЗ8А · №0021 &nbsp;|&nbsp; Секция А</span>
+    <span data-i18n="footer_mid">Задержка: <span>+0 мин</span> &nbsp;|&nbsp; СКИФ: ОК &nbsp;|&nbsp; КЛУБ-У: ОК &nbsp;|&nbsp; ТСКБМ: ОК</span>
+    <span id="fclk">—</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ===== I18N =====
+const i18n = {
+  ru: {
+    tagline:'Машинист: Алтынбеков Р.М. &nbsp;|&nbsp; Нур-Султан → Кокшетау',
+    speed:'Скорость',kmh:'КМ/Ч',speed_lim:'▲ ЛИМ 120',traction_motors:'Тяговые двигатели',
+    td1_cur:'ТД1 ток',td2_cur:'ТД2 ток',td3_cur:'ТД3 ток',td4_cur:'ТД4 ток',
+    td1_temp:'ТД1 °C',td4_temp:'ТД4 °C',km_pos:'Позиция КМ',traction:'ТЯГА',
+    contact_net:'Контактная сеть',norm:'НОРМА',norm2:'НОРМА',norm3:'НОРМА',
+    current:'Ток',power:'Мощность',regen_active:'Рекуперация активна',returned:'Возвращено',
+    pantograph:'Пантограф',raised:'ПОДНЯТ',transformer_temp:'Т трансформ.',
+    battery:'АКБ борт.',cooling:'Охлаждение',brake_pressure:'Давление тормозов',ept_ok:'ЭПТ ОК',
+    health_idx:'Индекс здоровья',health_grade:'A • ОТЛИЧНО',alerts:'Алерты',
+    alert1:'ТД4: ток +5% выше среднего',alert2:'ТД4: Т обмотки 82°C ↑',
+    alert3:'Рекуперация 2.4 МВт — норма',alert4:'Трансформатор 71°C — норма',
+    alert5:'ЭПТ / пневматика — норма',alert6:'СКИФ / КЛУБ-У — норма',
+    route:'Маршрут',traveled:'Пройдено',arrival:'Прибытие',next_stop:'Следующий ост.',
+    loco_diagram:'Схема локомотива КЗ8А',
+    legend_title:'СОСТОЯНИЕ УЗЛОВ',legend_ok:'Норма',legend_warn:'Предупреждение',legend_crit:'Критично',
+    legend_parts:'УЗЛЫ',leg_motors:'ТД / Инвертор',leg_transformer:'Трансформатор',
+    leg_pantograph:'Пантограф',leg_cooling:'Охлаждение',leg_brakes:'Тормоза',
+    chart_label:'Скорость + рекуперация • 60 сек',td_currents:'Токи ТД',speed_limits:'Ограничения скорости',
+    limit1_sub:'через 8 км (кривая R=600)',limit2_sub:'текущий участок',limit3_sub:'через 35 км (перегон)',
+    footer_left:'КЗ8А · №0021 &nbsp;|&nbsp; Секция А',
+    footer_mid:'Задержка: <span>+0 мин</span> &nbsp;|&nbsp; СКИФ: ОК &nbsp;|&nbsp; КЛУБ-У: ОК &nbsp;|&nbsp; ТСКБМ: ОК',
+  },
+  kz: {
+    tagline:'Машинист: Алтынбеков Р.М. &nbsp;|&nbsp; Нұр-Сұлтан → Көкшетау',
+    speed:'Жылдамдық',kmh:'КМ/САҒ',speed_lim:'▲ ШЕК 120',traction_motors:'Тарту қозғалтқыштары',
+    td1_cur:'ТҚ1 тогы',td2_cur:'ТҚ2 тогы',td3_cur:'ТҚ3 тогы',td4_cur:'ТҚ4 тогы',
+    td1_temp:'ТҚ1 °C',td4_temp:'ТҚ4 °C',km_pos:'КМ позициясы',traction:'ТАРТУ',
+    contact_net:'Жанасу желісі',norm:'НОРМА',norm2:'НОРМА',norm3:'НОРМА',
+    current:'Тогы',power:'Қуаты',regen_active:'Рекуперация белсенді',returned:'Қайтарылды',
+    pantograph:'Пантограф',raised:'КӨТЕРІЛГЕН',transformer_temp:'Трансформ. T°',
+    battery:'Борттық АКБ',cooling:'Салқындату',brake_pressure:'Тежеуіш қысымы',ept_ok:'ЭТТ ОК',
+    health_idx:'Денсаулық индексі',health_grade:'A • ӨТЕ ЖАҚСЫ',alerts:'Ескертулер',
+    alert1:'ТҚ4: тогы орташадан +5% жоғары',alert2:'ТҚ4: орам температурасы 82°C ↑',
+    alert3:'Рекуперация 2.4 МВт — норма',alert4:'Трансформатор 71°C — норма',
+    alert5:'ЭТТ / пневматика — норма',alert6:'СКИФ / КЛУБ-У — норма',
+    route:'Маршрут',traveled:'Өтілді',arrival:'Келу уақыты',next_stop:'Келесі аялдама',
+    loco_diagram:'КЗ8А локомотив сызбасы',
+    legend_title:'ТОРАП КҮЙІ',legend_ok:'Норма',legend_warn:'Ескерту',legend_crit:'Сыни',
+    legend_parts:'ТОРАБТАР',leg_motors:'ТҚ / Инвертор',leg_transformer:'Трансформатор',
+    leg_pantograph:'Пантограф',leg_cooling:'Салқындату',leg_brakes:'Тежеуіш',
+    chart_label:'Жылдамдық + рекуперация • 60 сек',td_currents:'ТҚ тоғы',speed_limits:'Жылдамдық шектеулері',
+    limit1_sub:'8 км-ден кейін (иін R=600)',limit2_sub:'ағымдағы учаске',limit3_sub:'35 км-ден кейін (аралық)',
+    footer_left:'КЗ8А · №0021 &nbsp;|&nbsp; А Секция',
+    footer_mid:'Кешігу: <span>+0 мин</span> &nbsp;|&nbsp; СКИФ: ОК &nbsp;|&nbsp; КЛУБ-У: ОК &nbsp;|&nbsp; ТСКБМ: ОК',
+  }
+};
+function setLang(lang){
+  const t=i18n[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(t[k]!==undefined) el.innerHTML=t[k];
+  });
+  document.getElementById('btn-ru').classList.toggle('active',lang==='ru');
+  document.getElementById('btn-kz').classList.toggle('active',lang==='kz');
+}
+
+// ===== LOCOMOTIVE DIAGRAM STATUS =====
+// TD4 has current and temp warnings → motors section warn
+const partStatus = {
+  'part-motors':      'warn',  // TD4 current/temp issue
+  'part-transformer': 'ok',
+  'part-pantograph':  'ok',
+  'part-cooling':     'ok',
+  'part-brakes':      'ok',
+  'part-regen':       'ok',
+  'part-cab':         'ok',
+  'part-cab2':        'ok',
+  'part-body':        'ok',
+};
+
+const partColors = {
+  ok: {
+    stroke: '#34d399',
+    strokeWidth: '2.2',
+    filter: 'drop-shadow(0 0 6px rgba(52,211,153,0.75)) drop-shadow(0 0 12px rgba(52,211,153,0.28))',
+    anim: 'none',
+    opacity: '1'
+  },
+  warn: {
+    stroke: '#facc15',
+    strokeWidth: '2.8',
+    filter: 'drop-shadow(0 0 8px rgba(250,204,21,0.95)) drop-shadow(0 0 14px rgba(250,204,21,0.35))',
+    anim: 'none',
+    opacity: '1'
+  },
+  crit: {
+    stroke: '#f87171',
+    strokeWidth: '3.2',
+    filter: 'drop-shadow(0 0 10px rgba(248,113,113,1)) drop-shadow(0 0 16px rgba(248,113,113,0.42))',
+    anim: 'blink-crit 1.1s infinite',
+    opacity: '1'
+  },
+};
+
+const legendMap = {
+  'leg-motors':      'part-motors',
+  'leg-transformer': 'part-transformer',
+  'leg-pantograph':  'part-pantograph',
+  'leg-cooling':     'part-cooling',
+  'leg-brakes':      'part-brakes',
+};
+const legendColors = {
+  ok:   { bg:'rgba(52,211,153,0.3)',  border:'#34d399' },
+  warn: { bg:'rgba(250,204,21,0.5)',  border:'#facc15' },
+  crit: { bg:'rgba(248,113,113,0.5)', border:'#f87171' },
+};
+
+function applyDiagramStatus() {
+  for (const [id, status] of Object.entries(partStatus)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+
+    if (!el.dataset.baseStroke) {
+      el.dataset.baseStroke = el.getAttribute('stroke') || '';
+      el.dataset.baseStrokeWidth = el.getAttribute('stroke-width') || '';
+      el.dataset.baseFilter = el.style.filter || '';
+      el.dataset.baseAnimation = el.style.animation || '';
+      el.dataset.baseOpacity = el.style.opacity || '1';
+    }
+
+    const c = partColors[status] || partColors.ok;
+    const baseStroke = el.dataset.baseStroke;
+    const baseStrokeWidth = el.dataset.baseStrokeWidth;
+
+    el.style.stroke = c.stroke || baseStroke;
+    el.style.strokeWidth = c.strokeWidth || baseStrokeWidth;
+    el.style.filter = c.filter;
+    el.style.animation = c.anim;
+    el.style.opacity = c.opacity;
+    el.style.vectorEffect = 'non-scaling-stroke';
+    el.style.strokeLinecap = 'round';
+    el.style.strokeLinejoin = 'round';
+    el.style.paintOrder = 'stroke';
+  }
+  for (const [legId, partId] of Object.entries(legendMap)) {
+    const el = document.getElementById(legId);
+    if (!el) continue;
+    const st = partStatus[partId] || 'ok';
+    el.style.background = legendColors[st].bg;
+    el.style.borderColor = legendColors[st].border;
+  }
+}
+applyDiagramStatus();
+
+// ===== CLOCK =====
+function tick(){
+  const t=new Date().toLocaleTimeString('ru-RU');
+  document.getElementById('clk').textContent=t;
+  document.getElementById('fclk').textContent=t;
+}
+tick(); setInterval(tick,1000);
+
+// ===== LIVE DATA (WebSocket) =====
+const WS_URL = 'ws://localhost:8000/ws/loco/data';
+let wsRetryTimer = null;
+let smoothVoltageKv = null;
+let smoothSpeedKmh = null;
+let speedRegenChart = null;
+const chartSpeedData = Array.from({ length: 60 }, () => 0);
+const chartRegenData = Array.from({ length: 60 }, () => 0);
+
+function pickNumber(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function normalizePayload(raw) {
+  const src = raw?.data && typeof raw.data === 'object' ? raw.data : raw;
+  if (!src || typeof src !== 'object') return null;
+
+  return {
+    type: String(src.type || '').toLowerCase(),
+    speed: pickNumber(src, ['speed', 'velocity', 'v']),
+    voltage: pickNumber(src, ['catenary_voltage_kv', 'voltage', 'u', 'line_voltage']),
+    current: pickNumber(src, ['pantograph_current_a', 'current', 'i', 'amperage']),
+    regenKw: pickNumber(src, ['regen_power_kw', 'regen', 'regeneration', 'regen_power']),
+    powerKw: pickNumber(src, ['power_consumption_kw', 'power_kw']),
+    batteryV: pickNumber(src, ['battery_v', 'battery_voltage']),
+    fuel: pickNumber(src, ['fuel', 'fuel_level', 'fuel_percent']),
+    pressure: pickNumber(src, ['pressure', 'brake_pressure']),
+    healthIndex: pickNumber(src, ['health_index']),
+    healthGrade: src.health_grade,
+    oilTemp: pickNumber(src, ['oilTemp', 'oil_temp', 'engine_oil_temp', 'transformer_temp_c']),
+    transformerTemp: pickNumber(src, ['transformer_temp_c']),
+    coolingTemp: pickNumber(src, ['coolingTemp', 'cooling_temp', 'coolant_temp']),
+    pantographUp: src.pantograph_up,
+    sensors: src.sensors || {},
+    tdCurrents: Array.isArray(src.td_currents_a) ? src.td_currents_a : [],
+    tdTemps: Array.isArray(src.td_temps_c) ? src.td_temps_c : [],
+  };
+}
+
+function applyLiveData(d) {
+  if (d.type && d.type !== 'electro') return;
+
+  const speed = Number.isFinite(d.speed) ? Math.max(0, Math.min(220, d.speed)) : null;
+  const voltage = Number.isFinite(d.voltage) ? Math.max(0, Math.min(25, d.voltage)) : null;
+  const current = d.current;
+  const regen = d.regenKw;
+
+  if (Number.isFinite(speed)) {
+    smoothSpeedKmh = smoothSpeedKmh === null ? speed : (smoothSpeedKmh * 0.75 + speed * 0.25);
+    document.getElementById('spd').textContent = smoothSpeedKmh.toFixed(1);
+  }
+  if (Number.isFinite(voltage)) {
+    smoothVoltageKv = smoothVoltageKv === null ? voltage : (smoothVoltageKv * 0.7 + voltage * 0.3);
+    document.getElementById('vlt').textContent = smoothVoltageKv.toFixed(2);
+    // For electro panel ring, 25кВ is full scale.
+    const arc = document.getElementById('varc');
+    const ratio = Math.max(0, Math.min(1, smoothVoltageKv / 25));
+    arc.setAttribute('stroke-dashoffset', String(323 - 323 * ratio));
+  }
+  if (Number.isFinite(current)) document.getElementById('cur').textContent = Math.round(current) + 'А';
+  if (Number.isFinite(regen)) document.getElementById('regen').textContent = (regen / 1000).toFixed(2) + ' МВт';
+  if (Number.isFinite(d.powerKw)) document.getElementById('powerVal').textContent = d.powerKw.toFixed(1) + 'кВт';
+
+  if (speedRegenChart) {
+    const speedForChart = Number.isFinite(speed) ? speed : (Number.isFinite(chartSpeedData[chartSpeedData.length - 1]) ? chartSpeedData[chartSpeedData.length - 1] : 0);
+    const regenForChartMw = Number.isFinite(regen) ? Math.max(0, regen / 1000) : 0;
+    chartSpeedData.push(speedForChart);
+    chartRegenData.push(regenForChartMw);
+    if (chartSpeedData.length > 60) chartSpeedData.shift();
+    if (chartRegenData.length > 60) chartRegenData.shift();
+    speedRegenChart.data.datasets[0].data = chartSpeedData;
+    speedRegenChart.data.datasets[1].data = chartRegenData;
+    speedRegenChart.update('none');
+  }
+
+  if (Number.isFinite(d.batteryV)) {
+    document.getElementById('batteryVal').textContent = d.batteryV.toFixed(1) + 'В';
+    const bp = Math.max(0, Math.min(100, (d.batteryV / 120) * 100));
+    document.getElementById('batteryBar').style.width = bp.toFixed(1) + '%';
+  }
+
+  if (Number.isFinite(d.pressure)) {
+    document.getElementById('pressureVal').textContent = d.pressure.toFixed(2) + ' атм';
+    const pp = Math.max(0, Math.min(100, (d.pressure / 6.5) * 100));
+    document.getElementById('pressureBar').style.width = pp.toFixed(1) + '%';
+  }
+
+  if (Number.isFinite(d.healthIndex)) document.getElementById('healthIdx').textContent = Math.round(d.healthIndex);
+  if (d.healthGrade) document.getElementById('healthGrade').textContent = d.healthGrade;
+
+  if (Number.isFinite(d.transformerTemp)) {
+    document.getElementById('transformerTemp').textContent = d.transformerTemp.toFixed(1) + '°C';
+    const tp = Math.max(0, Math.min(100, (d.transformerTemp / 120) * 100));
+    document.getElementById('transformerBar').style.width = tp.toFixed(1) + '%';
+  }
+
+  if (typeof d.pantographUp === 'boolean') {
+    document.getElementById('pantographState').textContent = d.pantographUp ? 'ПОДНЯТ' : 'ОПУЩЕН';
+    document.getElementById('pantographBar').style.width = d.pantographUp ? '100%' : '0%';
+  }
+
+  if (d.tdCurrents.length >= 4) {
+    document.getElementById('td1cur').textContent = Number(d.tdCurrents[0]).toFixed(1) + 'А';
+    document.getElementById('td2cur').textContent = Number(d.tdCurrents[1]).toFixed(1) + 'А';
+    document.getElementById('td3cur').textContent = Number(d.tdCurrents[2]).toFixed(1) + 'А';
+    document.getElementById('td4cur').textContent = Number(d.tdCurrents[3]).toFixed(1) + 'А';
+  }
+  if (d.tdTemps.length >= 4) {
+    document.getElementById('td1temp').textContent = Number(d.tdTemps[0]).toFixed(1) + '°';
+    document.getElementById('td4temp').textContent = Number(d.tdTemps[3]).toFixed(1) + '°';
+  }
+
+  const bpStatus = String(d.sensors?.BRAKE_PRESSURE?.status || '').toUpperCase();
+  const ohStatus = String(d.sensors?.OVERHEAT?.status || '').toUpperCase();
+  const vStatus = String(d.sensors?.VOLTAGE?.status || '').toUpperCase();
+  document.getElementById('pressureStatus').textContent = bpStatus || 'OK';
+
+  partStatus['part-brakes'] = bpStatus === 'CRIT' ? 'crit' : bpStatus === 'WARN' ? 'warn' : 'ok';
+  partStatus['part-transformer'] = ohStatus === 'CRIT' ? 'crit' : (ohStatus === 'WARN' || vStatus === 'WARN') ? 'warn' : 'ok';
+  partStatus['part-pantograph'] = d.pantographUp === false ? 'warn' : 'ok';
+  partStatus['part-cooling'] = Number.isFinite(d.transformerTemp) && d.transformerTemp > 85 ? 'warn' : 'ok';
+  partStatus['part-motors'] = d.tdTemps.some((t) => Number(t) > 95) ? 'crit' : d.tdTemps.some((t) => Number(t) > 85) ? 'warn' : 'ok';
+  partStatus['part-regen'] = Number.isFinite(regen) && regen > 0 ? 'ok' : 'warn';
+  applyDiagramStatus();
+}
+
+function connectWS() {
+  const ws = new WebSocket(WS_URL);
+
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      const normalized = normalizePayload(parsed);
+      if (normalized) applyLiveData(normalized);
+    } catch (_err) {}
+  };
+
+  ws.onclose = () => {
+    if (wsRetryTimer) clearTimeout(wsRetryTimer);
+    wsRetryTimer = setTimeout(connectWS, 1500);
+  };
+
+  ws.onerror = () => {
+    try { ws.close(); } catch (_e) {}
+  };
+}
+
+connectWS();
+
+// ===== CHARTS =====
+const labels=Array.from({length:60},(_,i)=>i);
+const c1=document.getElementById('spdChart').getContext('2d');
+speedRegenChart = new Chart(c1,{type:'line',data:{labels,datasets:[
+  {data:chartSpeedData,borderColor:'#a78bfa',borderWidth:1.5,pointRadius:0,tension:.3,fill:false,yAxisID:'y'},
+  {data:chartRegenData,borderColor:'#34d399',borderWidth:1.5,pointRadius:0,tension:.3,fill:true,backgroundColor:'rgba(52,211,153,0.08)',yAxisID:'y2'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+scales:{x:{display:false},y:{position:'left',min:0,max:220,ticks:{color:'#334155',font:{size:8},stepSize:20},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}},
+y2:{position:'right',min:0,max:5,ticks:{color:'#334155',font:{size:8},stepSize:2.5},grid:{display:false},border:{display:false}}},animation:{duration:0}}});
+
+const tdL=Array.from({length:20},(_,i)=>i);
+const td1=[410,411,412,412,413,412,412,413,412,412,412,412,413,412,412,412,412,412,412,412];
+const td4=[425,427,428,429,430,430,431,431,430,431,431,431,431,430,431,431,431,431,431,431];
+const c2=document.getElementById('tdChart').getContext('2d');
+new Chart(c2,{type:'line',data:{labels:tdL,datasets:[
+  {data:td1,borderColor:'#4ade80',borderWidth:1.5,pointRadius:0,tension:.3,fill:false},
+  {data:td4,borderColor:'#facc15',borderWidth:1.5,pointRadius:0,tension:.3,fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+scales:{x:{display:false},y:{min:390,max:450,ticks:{color:'#334155',font:{size:8},stepSize:20},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}},animation:{duration:0}}});
+</script>

@@ -1,0 +1,1107 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  :root{
+    --bg:#0a0e17;--bg2:#111827;--bg3:#1a2235;--bg4:#1e2d42;
+    --accent:#00d4ff;--accent2:#00ff88;--accent3:#ff6b35;--accent4:#ffd700;
+    --warn:#ff4444;--muted:#4a6580;--text:#e2eaf4;--text2:#8ba4be;
+  }
+  body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;min-height:100vh;padding:0}
+  .driver-dash{display:grid;grid-template-rows:auto 1fr auto;min-height:100vh}
+  .top-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:var(--bg2);border-bottom:1px solid rgba(0,212,255,0.15);font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text2)}
+  .loco-id{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:2px}
+  .status-ok{color:var(--accent2);display:flex;align-items:center;gap:6px}
+  .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent2);animation:pulse 1.5s infinite}
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.7)}}
+  .main-grid{display:grid;grid-template-columns:1fr 220px 1fr;grid-template-rows:1fr auto 150px;gap:10px;padding:10px}
+  .panel{background:var(--bg2);border:1px solid rgba(0,212,255,0.12);border-radius:8px;padding:12px;position:relative;overflow:hidden}
+  .panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.4}
+  .panel-label{font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:8px}
+  .speedometer{grid-column:2;grid-row:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--bg3)}
+  .speed-ring{position:relative;width:150px;height:150px}
+  .speed-ring svg{width:150px;height:150px}
+  .speed-val{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .speed-num{font-size:40px;font-weight:700;color:var(--accent);line-height:1;font-family:'JetBrains Mono',monospace}
+  .speed-unit{font-size:11px;color:var(--text2);letter-spacing:2px;margin-top:2px}
+  .speed-limit{font-size:10px;color:var(--accent4);margin-top:4px;font-family:'JetBrains Mono',monospace}
+  .left-panel{grid-column:1;grid-row:1;display:flex;flex-direction:column;gap:8px}
+  .right-panel{grid-column:3;grid-row:1;display:flex;flex-direction:column;gap:8px}
+  .metric-row{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--bg3);border-radius:6px;border:1px solid rgba(255,255,255,0.05)}
+  .metric-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+  .metric-info{flex:1;min-width:0}
+  .metric-name{font-size:9px;color:var(--text2);letter-spacing:1px;text-transform:uppercase}
+  .metric-value{font-size:16px;font-weight:600;line-height:1.1;font-family:'JetBrains Mono',monospace}
+  .metric-bar{height:3px;background:rgba(255,255,255,0.08);border-radius:2px;margin-top:3px}
+  .metric-bar-fill{height:100%;border-radius:2px;transition:width 0.3s}
+  .v-ok{color:var(--accent2)}.v-warn{color:var(--accent4)}.v-crit{color:var(--warn)}.v-blue{color:var(--accent)}
+  .bar-ok{background:var(--accent2)}.bar-warn{background:var(--accent4)}.bar-crit{background:var(--warn)}.bar-blue{background:var(--accent)}
+  .health-idx{display:flex;flex-direction:column;align-items:center;padding:7px;background:var(--bg3);border-radius:6px;border:1px solid rgba(0,255,136,0.2)}
+  .health-score{font-size:28px;font-weight:700;color:var(--accent2);font-family:'JetBrains Mono',monospace}
+  .health-grade{font-size:10px;letter-spacing:3px;color:var(--accent2)}
+  .health-sub{font-size:9px;color:var(--text2);margin-top:2px}
+  .alerts-row{display:flex;flex-direction:column;gap:4px;flex:1}
+  .alert-item{display:flex;align-items:center;gap:7px;padding:5px 7px;background:rgba(255,68,68,0.08);border-radius:4px;border-left:2px solid var(--warn);font-size:10px}
+  .alert-item.warn{background:rgba(255,215,0,0.08);border-left-color:var(--accent4)}
+  .alert-item.ok{background:rgba(0,255,136,0.06);border-left-color:var(--accent2)}
+  .alert-dot{width:5px;height:5px;border-radius:50%;background:var(--warn);flex-shrink:0}
+  .alert-item.warn .alert-dot{background:var(--accent4)}
+  .alert-item.ok .alert-dot{background:var(--accent2)}
+  .traction-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:5px}
+  .traction-item{background:var(--bg3);border-radius:4px;padding:5px 7px;text-align:center}
+  .traction-val{font-size:14px;font-weight:600;font-family:'JetBrains Mono',monospace}
+  .traction-lbl{font-size:8px;color:var(--text2);letter-spacing:1px;text-transform:uppercase}
+  .footer-bar{padding:7px 20px;background:var(--bg2);border-top:1px solid rgba(0,212,255,0.1);display:flex;align-items:center;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text2)}
+  .footer-bar .km{color:var(--accent);font-size:11px}
+
+  /* Language switcher */
+  .lang-btn{display:flex;align-items:center;border-radius:6px;overflow:hidden;border:1px solid rgba(0,212,255,0.25);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;letter-spacing:1px}
+  .lang-btn button{background:transparent;border:none;color:var(--text2);padding:4px 10px;cursor:pointer;transition:background 0.2s,color 0.2s}
+  .lang-btn button.active{background:var(--accent);color:#000}
+  .lang-btn .sep{width:1px;background:rgba(0,212,255,0.2);align-self:stretch}
+
+  /* Locomotive diagram panel */
+  .loco-diagram-panel{grid-column:1/-1;grid-row:2;background:var(--bg2);border:1px solid rgba(0,212,255,0.12);border-radius:8px;padding:10px 16px;position:relative;overflow:hidden}
+  .loco-diagram-panel::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.4}
+  .loco-diagram-wrap{display:flex;align-items:center;gap:16px}
+  .loco-svg-wrap{flex:1;display:flex;justify-content:center}
+  .loco-legend{display:flex;flex-direction:column;gap:4px;min-width:160px}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:9px;font-family:'JetBrains Mono',monospace;letter-spacing:1px}
+  .legend-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+  /* SVG part transitions */
+  .loco-part{transition:stroke 0.35s ease, stroke-width 0.35s ease, filter 0.35s ease}
+  .loco-status-ok{
+    fill-opacity:1!important;
+    stroke:#00ff88!important;
+    stroke-width:2.2!important;
+    filter:drop-shadow(0 0 6px rgba(0,255,136,0.9))!important;
+  }
+  .loco-status-warn{
+    fill-opacity:1!important;
+    stroke:#ffd700!important;
+    stroke-width:2.6!important;
+    filter:drop-shadow(0 0 8px rgba(255,215,0,0.95))!important;
+  }
+  .loco-status-crit{
+    fill-opacity:1!important;
+    stroke:#ff4444!important;
+    stroke-width:3!important;
+    filter:drop-shadow(0 0 10px rgba(255,68,68,1))!important;
+    animation:blink-part 1.0s infinite!important;
+  }
+  @keyframes blink-part{0%,100%{opacity:1}50%{opacity:0.7}}
+</style>
+
+<div class="driver-dash">
+  <div class="top-bar">
+    <div style="display:flex;align-items:center;gap:16px">
+      <span class="loco-id">ТЭ33А • №0051</span>
+      <span style="color:var(--muted)">|</span>
+      <span data-i18n="driver">МАШИНИСТ: Карпов А.С.</span>
+    </div>
+    <div class="status-ok">
+      <div class="pulse"></div>
+      <span data-i18n="telemetry">ТЕЛЕМЕТРИЯ АКТИВНА</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span id="clock" style="color:var(--text);font-size:13px">—</span>
+      <div class="lang-btn">
+        <button id="btn-ru" class="active" onclick="setLang('ru')">РУ</button>
+        <div class="sep"></div>
+        <button id="btn-kz" onclick="setLang('kz')">ҚАЗ</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="main-grid">
+
+    <!-- LEFT PANEL -->
+    <div class="panel left-panel">
+      <div class="panel-label" data-i18n="panel_traction">Тяга и движение</div>
+      <div class="metric-row">
+        <div class="metric-icon" style="background:rgba(0,212,255,0.12)">⚡</div>
+        <div class="metric-info">
+          <div class="metric-name" data-i18n="traction_force">Тяговое усилие</div>
+          <div class="metric-value v-blue"><span id="traction-val">184</span> <span style="font-size:11px;color:var(--text2)">кН</span></div>
+          <div class="metric-bar"><div class="metric-bar-fill bar-blue" id="traction-bar" style="width:61%"></div></div>
+        </div>
+        <div style="font-size:9px;color:var(--text2)" id="traction-pct">61%</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-icon" style="background:rgba(255,215,0,0.1)">🛑</div>
+        <div class="metric-info">
+          <div class="metric-name" data-i18n="brake_pressure">Давление тормозов</div>
+          <div class="metric-value v-ok"><span id="brake-val">5.2</span> <span style="font-size:10px;color:var(--text2)">атм</span></div>
+          <div class="metric-bar"><div class="metric-bar-fill bar-ok" id="brake-bar" style="width:72%"></div></div>
+        </div>
+        <div style="font-size:9px;color:var(--accent2)" id="brake-status" data-i18n="norm">НОРМА</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-icon" style="background:rgba(0,255,136,0.08)">↕</div>
+        <div class="metric-info">
+          <div class="metric-name" data-i18n="km_pos">Позиция КМ</div>
+          <div class="metric-value v-ok" id="km-pos-val">П-5</div>
+        </div>
+        <div style="font-size:9px;color:var(--text2)" id="traction-mode" data-i18n="traction">ТЯГА</div>
+      </div>
+      <div style="margin-top:4px">
+        <div class="panel-label" style="margin-bottom:5px" data-i18n="axle_load">Нагрузка на оси</div>
+        <div class="traction-grid">
+          <div class="traction-item"><div class="traction-val v-ok" id="axle-1-val">18.4</div><div class="traction-lbl" data-i18n="axle1">ось 1 (т)</div></div>
+          <div class="traction-item"><div class="traction-val v-ok" id="axle-2-val">18.1</div><div class="traction-lbl" data-i18n="axle2">ось 2 (т)</div></div>
+          <div class="traction-item"><div class="traction-val v-ok" id="axle-3-val">17.9</div><div class="traction-lbl" data-i18n="axle3">ось 3 (т)</div></div>
+          <div class="traction-item"><div class="traction-val v-warn" id="axle-4-val">18.8</div><div class="traction-lbl" data-i18n="axle4">ось 4 (т)</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SPEEDOMETER -->
+    <div class="panel speedometer">
+      <div class="panel-label" style="text-align:center" data-i18n="speed">Скорость</div>
+      <div class="speed-ring">
+        <svg viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(0,212,255,0.08)" stroke-width="12"/>
+          <circle cx="80" cy="80" r="68" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="12" stroke-dasharray="355" stroke-dashoffset="71" stroke-linecap="round" transform="rotate(-210 80 80)"/>
+          <circle cx="80" cy="80" r="68" fill="none" stroke="#00d4ff" stroke-width="12" stroke-dasharray="355" stroke-dashoffset="213" stroke-linecap="round" transform="rotate(-210 80 80)" id="speed-arc"/>
+        </svg>
+        <div class="speed-val">
+          <div class="speed-num" id="spd">87</div>
+          <div class="speed-unit" data-i18n="kmh">КМ/Ч</div>
+          <div class="speed-limit">▲ <span id="speed-limit-val">90</span></div>
+        </div>
+      </div>
+      <div style="margin-top:8px">
+        <div class="health-idx">
+          <div class="health-score" id="health-score">92</div>
+          <div class="health-grade" id="health-grade" data-i18n="health_grade">A • НОРМА</div>
+          <div class="health-sub" data-i18n="health_idx">Индекс здоровья</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL -->
+    <div class="panel right-panel">
+      <div class="panel-label" data-i18n="panel_resources">Ресурсы и узлы</div>
+      <div class="metric-row">
+        <div class="metric-icon" style="background:rgba(255,107,53,0.12)">⛽</div>
+        <div class="metric-info">
+          <div class="metric-name" data-i18n="fuel">Топливо</div>
+          <div class="metric-value v-warn"><span id="fuel-val">2840</span> <span id="fuel-unit" style="font-size:10px;color:var(--text2)">л</span></div>
+          <div class="metric-bar"><div class="metric-bar-fill bar-warn" id="fuel-bar" style="width:47%"></div></div>
+        </div>
+        <div style="font-size:9px;color:var(--accent4)" id="fuel-pct">2840 л</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-icon" style="background:rgba(255,68,68,0.1)">🌡</div>
+        <div class="metric-info">
+          <div class="metric-name" data-i18n="oil_temp">Т масла двигателя</div>
+          <div class="metric-value v-warn"><span id="oil-temp-val">78</span> <span style="font-size:10px;color:var(--text2)">°C</span></div>
+          <div class="metric-bar"><div class="metric-bar-fill bar-warn" id="oil-temp-bar" style="width:78%"></div></div>
+        </div>
+        <div style="font-size:9px;color:var(--accent4)" id="oil-trend">↑</div>
+      </div>
+      <div class="metric-row">
+        <div class="metric-icon" style="background:rgba(0,212,255,0.08)">⚙</div>
+        <div class="metric-info">
+          <div class="metric-name" data-i18n="rpm">Обороты дизеля</div>
+          <div class="metric-value v-blue"><span id="rpm-val">1420</span> <span style="font-size:10px;color:var(--text2)" data-i18n="rpm_unit">об/мин</span></div>
+          <div class="metric-bar"><div class="metric-bar-fill bar-blue" id="rpm-bar" style="width:59%"></div></div>
+        </div>
+        <div style="font-size:9px;color:var(--text2)" id="rpm-pct">59%</div>
+      </div>
+      <div style="flex:1">
+        <div class="panel-label" style="margin-top:6px;margin-bottom:5px" data-i18n="alerts">Активные алерты</div>
+        <div class="alerts-row">
+          <div class="alert-item warn" id="alert1-row"><div class="alert-dot"></div><span id="alert1-txt" data-i18n="alert1">Т масла выше нормы (+8°C)</span></div>
+          <div class="alert-item warn" id="alert2-row"><div class="alert-dot"></div><span id="alert2-txt" data-i18n="alert2">Топливо &lt; 50% — плановая заправка</span></div>
+          <div class="alert-item ok" id="alert3-row"><div class="alert-dot"></div><span id="alert3-txt" data-i18n="alert3">Тормозная система — норма</span></div>
+          <div class="alert-item ok" id="alert4-row"><div class="alert-dot"></div><span id="alert4-txt" data-i18n="alert4">Напряжение ГГ 530В — норма</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCOMOTIVE DIAGRAM -->
+    <div class="loco-diagram-panel">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="panel-label" style="margin-bottom:0" data-i18n="loco_diagram">Схема локомотива ТЭ33А</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px">ДИАГНОСТИКА</div>
+      </div>
+      <div class="loco-diagram-wrap">
+        <div class="loco-svg-wrap">
+          <!-- TE33A Diesel Locomotive — Detailed Technical SVG -->
+          <svg id="loco-svg" viewBox="0 0 860 195" xmlns="http://www.w3.org/2000/svg" style="width:100%;max-width:780px;height:155px">
+            <defs>
+              <linearGradient id="bodyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#1e3060"/>
+                <stop offset="50%" style="stop-color:#152444"/>
+                <stop offset="100%" style="stop-color:#0e1a30"/>
+              </linearGradient>
+              <linearGradient id="cabGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#1a3a6a"/>
+                <stop offset="100%" style="stop-color:#0d1f3c"/>
+              </linearGradient>
+              <linearGradient id="bogieGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#0f1c30"/>
+                <stop offset="100%" style="stop-color:#070d1a"/>
+              </linearGradient>
+              <linearGradient id="engineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" style="stop-color:#1a2a3e"/>
+                <stop offset="100%" style="stop-color:#0e1a2a"/>
+              </linearGradient>
+              <filter id="glow-green" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="glow-warn" x="-80%" y="-80%" width="260%" height="260%">
+                <feGaussianBlur stdDeviation="3" result="blur"/>
+                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+              </filter>
+              <filter id="exhaust-blur">
+                <feGaussianBlur stdDeviation="1.5"/>
+              </filter>
+            </defs>
+
+            <!-- === RAILS === -->
+            <rect x="0" y="180" width="860" height="4" rx="1" fill="#0c1a2e"/>
+            <rect x="0" y="183" width="860" height="3" rx="1" fill="#07101e"/>
+            <!-- Ties -->
+            <rect x="15"  y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="75"  y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="140" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="210" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="280" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="350" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="420" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="490" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="560" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="630" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="700" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="770" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+            <rect x="835" y="179" width="8" height="6" rx="1" fill="#0a1525"/>
+
+            <!-- === MAIN BODY === -->
+            <rect id="part-body" class="loco-part" x="48" y="52" width="764" height="120" rx="4" fill="url(#bodyGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1.2"/>
+            <!-- Underframe -->
+            <rect x="48" y="152" width="764" height="14" rx="2" fill="#091525" stroke="rgba(0,212,255,0.1)" stroke-width="1"/>
+            <!-- Top stripe (KZ blue-orange) -->
+            <rect x="48" y="52" width="764" height="5" rx="0" fill="rgba(0,212,255,0.15)"/>
+            <rect x="48" y="57" width="764" height="3" rx="0" fill="rgba(255,107,53,0.2)"/>
+            <!-- Side skirt line -->
+            <rect x="48" y="132" width="764" height="2" fill="rgba(0,212,255,0.12)"/>
+
+            <!-- === EXHAUST STACKS (выхлопные трубы) === -->
+            <!-- Main exhaust -->
+            <rect id="part-exhaust" class="loco-part" x="370" y="28" width="32" height="28" rx="3" fill="#1a2235" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <rect x="374" y="22" width="24" height="10" rx="2" fill="#0d1525" stroke="rgba(0,212,255,0.22)" stroke-width="1"/>
+            <!-- turbo exhaust -->
+            <rect x="416" y="32" width="20" height="22" rx="2" fill="#1a2235" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="419" y="27" width="14" height="8" rx="1" fill="#0d1525" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+            <text x="386" y="39" text-anchor="middle" fill="rgba(0,212,255,0.4)" font-family="JetBrains Mono,monospace" font-size="5.5">ВЫХЛ</text>
+            <!-- Exhaust smoke effect -->
+            <ellipse cx="386" cy="20" rx="4" ry="2" fill="rgba(100,120,150,0.12)" filter="url(#exhaust-blur)"/>
+            <ellipse cx="386" cy="16" rx="3" ry="2" fill="rgba(100,120,150,0.08)" filter="url(#exhaust-blur)"/>
+            <ellipse cx="429" cy="24" rx="3" ry="1.5" fill="rgba(100,120,150,0.1)" filter="url(#exhaust-blur)"/>
+
+            <!-- === RADIATOR SECTION (радиаторный отсек) === -->
+            <rect id="part-cooling" class="loco-part" x="490" y="40" width="130" height="116" rx="3" fill="#1a2235" stroke="rgba(0,212,255,0.2)" stroke-width="1.2"/>
+            <!-- Radiator grid -->
+            <line x1="500" y1="48" x2="610" y2="48" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="58" x2="610" y2="58" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="68" x2="610" y2="68" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="78" x2="610" y2="78" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="88" x2="610" y2="88" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="98" x2="610" y2="98" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="108" x2="610" y2="108" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="118" x2="610" y2="118" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="128" x2="610" y2="128" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="500" y1="138" x2="610" y2="138" stroke="rgba(0,212,255,0.14)" stroke-width="0.8"/>
+            <line x1="515" y1="43" x2="515" y2="152" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="535" y1="43" x2="535" y2="152" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="555" y1="43" x2="555" y2="152" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="575" y1="43" x2="575" y2="152" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="595" y1="43" x2="595" y2="152" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <text x="555" y="92" text-anchor="middle" fill="rgba(0,212,255,0.5)" font-family="JetBrains Mono,monospace" font-size="7" letter-spacing="1">РАДИАТОР</text>
+            <!-- Cooling fan -->
+            <circle cx="555" cy="110" r="12" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <line x1="555" y1="98" x2="555" y2="122" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <line x1="543" y1="110" x2="567" y2="110" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <line x1="547" y1="102" x2="563" y2="118" stroke="rgba(0,212,255,0.12)" stroke-width="0.8"/>
+            <line x1="563" y1="102" x2="547" y2="118" stroke="rgba(0,212,255,0.12)" stroke-width="0.8"/>
+
+            <!-- === DIESEL ENGINE (дизель GEVO) === -->
+            <rect id="part-engine" class="loco-part" x="230" y="44" width="255" height="112" rx="4" fill="url(#engineGrad)" stroke="rgba(0,212,255,0.22)" stroke-width="1.2"/>
+            <!-- Engine cylinder banks -->
+            <rect x="238" y="50" width="239" height="28" rx="2" fill="rgba(0,212,255,0.04)" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <!-- Cylinders (12-cylinder GEVO) -->
+            <rect x="243" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="263" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="283" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="303" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="323" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="343" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="363" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="383" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="403" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="423" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="443" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="463" y="52" width="16" height="24" rx="2" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <!-- Crankshaft / engine block -->
+            <rect x="236" y="80" width="241" height="52" rx="2" fill="rgba(0,212,255,0.03)" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="258" y1="82" x2="258" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <line x1="284" y1="82" x2="284" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <line x1="318" y1="82" x2="318" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <line x1="358" y1="82" x2="358" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <line x1="398" y1="82" x2="398" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <line x1="438" y1="82" x2="438" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <line x1="469" y1="82" x2="469" y2="130" stroke="rgba(0,212,255,0.1)" stroke-width="0.8"/>
+            <text x="358" y="68" text-anchor="middle" fill="rgba(0,212,255,0.55)" font-family="JetBrains Mono,monospace" font-size="7.5" letter-spacing="1.5">ДИЗЕЛЬ GEVO-12</text>
+            <!-- Oil indicator warning -->
+            <circle cx="440" cy="60" r="4.5" fill="#ffd700" opacity="0.85" id="ind-oil" filter="url(#glow-warn)"/>
+
+            <!-- === MAIN GENERATOR (главный генератор) === -->
+            <rect id="part-generator" class="loco-part" x="170" y="58" width="58" height="96" rx="3" fill="#1a2235" stroke="rgba(0,212,255,0.18)" stroke-width="1"/>
+            <!-- Generator rotor symbol -->
+            <circle cx="199" cy="106" r="22" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="1.2"/>
+            <circle cx="199" cy="106" r="14" fill="none" stroke="rgba(0,212,255,0.1)" stroke-width="1"/>
+            <circle cx="199" cy="106" r="6" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <line x1="177" y1="106" x2="221" y2="106" stroke="rgba(0,212,255,0.12)" stroke-width="0.8"/>
+            <line x1="199" y1="84" x2="199" y2="128" stroke="rgba(0,212,255,0.12)" stroke-width="0.8"/>
+            <text x="199" y="72" text-anchor="middle" fill="rgba(0,212,255,0.4)" font-family="JetBrains Mono,monospace" font-size="6.5" letter-spacing="0.5">ГГ</text>
+            <text x="199" y="148" text-anchor="middle" fill="rgba(0,212,255,0.3)" font-family="JetBrains Mono,monospace" font-size="5.5">530В</text>
+
+            <!-- === EQUIPMENT CABINET (шкаф электрооборудования) === -->
+            <rect x="128" y="58" width="38" height="96" rx="2" fill="#0e1c36" stroke="rgba(0,212,255,0.15)" stroke-width="1"/>
+            <line x1="128" y1="78" x2="166" y2="78" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="128" y1="98" x2="166" y2="98" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="128" y1="118" x2="166" y2="118" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <line x1="128" y1="138" x2="166" y2="138" stroke="rgba(0,212,255,0.08)" stroke-width="0.8"/>
+            <text x="147" y="70" text-anchor="middle" fill="rgba(0,212,255,0.35)" font-family="JetBrains Mono,monospace" font-size="5.5" letter-spacing="0.5">ШЭО</text>
+
+            <!-- === DYNAMIC BRAKE RESISTORS (реостатное торможение) === -->
+            <rect x="625" y="52" width="75" height="66" rx="3" fill="#1a2235" stroke="rgba(255,215,0,0.15)" stroke-width="1"/>
+            <line x1="635" y1="62" x2="690" y2="62" stroke="rgba(255,215,0,0.12)" stroke-width="0.8"/>
+            <line x1="635" y1="72" x2="690" y2="72" stroke="rgba(255,215,0,0.12)" stroke-width="0.8"/>
+            <line x1="635" y1="82" x2="690" y2="82" stroke="rgba(255,215,0,0.12)" stroke-width="0.8"/>
+            <line x1="635" y1="92" x2="690" y2="92" stroke="rgba(255,215,0,0.12)" stroke-width="0.8"/>
+            <line x1="635" y1="102" x2="690" y2="102" stroke="rgba(255,215,0,0.12)" stroke-width="0.8"/>
+            <text x="662" y="120" text-anchor="middle" fill="rgba(255,215,0,0.4)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ДИН.ТОМ</text>
+
+            <!-- === FUEL TANK (бак топлива, bottom) === -->
+            <rect id="part-fuel" class="loco-part" x="220" y="128" width="160" height="28" rx="3" fill="#1a2235" stroke="rgba(255,107,53,0.25)" stroke-width="1"/>
+            <text x="300" y="145" text-anchor="middle" fill="rgba(255,107,53,0.55)" font-family="JetBrains Mono,monospace" font-size="7" letter-spacing="0.5">ТОПЛИВО 2840л</text>
+            <!-- fuel level indicator -->
+            <rect x="224" y="132" width="66" height="10" rx="1" fill="rgba(255,107,53,0.15)" stroke="rgba(255,107,53,0.2)" stroke-width="0.5"/>
+            <rect x="224" y="132" width="30" height="10" rx="1" fill="rgba(255,107,53,0.3)"/>
+            <!-- fuel warning indicator -->
+            <circle cx="290" cy="136" r="4.5" fill="#ffd700" opacity="0.8" id="ind-fuel" filter="url(#glow-warn)"/>
+
+            <!-- === BRAKE SYSTEM === -->
+            <rect id="part-brakes" class="loco-part" x="625" y="122" width="75" height="34" rx="3" fill="#1a2235" stroke="rgba(0,212,255,0.12)" stroke-width="1"/>
+            <text x="662" y="135" text-anchor="middle" fill="rgba(0,212,255,0.35)" font-family="JetBrains Mono,monospace" font-size="6" letter-spacing="0.5">ПНЕВМ.</text>
+            <text x="662" y="147" text-anchor="middle" fill="rgba(0,212,255,0.3)" font-family="JetBrains Mono,monospace" font-size="5.5">ТОРМОЗА</text>
+            <circle cx="640" cy="131" r="4" fill="none" stroke="rgba(0,212,255,0.3)" stroke-width="0.8"/>
+            <line x1="640" y1="131" x2="642" y2="128" stroke="rgba(0,212,255,0.35)" stroke-width="0.8"/>
+
+            <!-- === AIR FILTER / TURBOCHARGER === -->
+            <rect x="383" y="28" width="44" height="26" rx="2" fill="#1a2235" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <text x="405" y="40" text-anchor="middle" fill="rgba(0,212,255,0.35)" font-family="JetBrains Mono,monospace" font-size="5.5" letter-spacing="0.5">ТУРБО</text>
+            <circle cx="405" cy="24" r="6" fill="none" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+            <line x1="399" y1="18" x2="411" y2="30" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <line x1="411" y1="18" x2="399" y2="30" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+
+            <!-- === PRIMARY CAB (кабина машиниста) === -->
+            <rect id="part-cab" class="loco-part" x="48" y="42" width="82" height="122" rx="5" fill="url(#cabGrad)" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+            <!-- Main windows -->
+            <rect x="57" y="54" width="36" height="24" rx="3" fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.32)" stroke-width="1.2"/>
+            <rect x="97" y="54" width="26" height="24" rx="3" fill="rgba(0,212,255,0.05)" stroke="rgba(0,212,255,0.25)" stroke-width="1"/>
+            <!-- wiper line -->
+            <line x1="59" y1="76" x2="91" y2="76" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+            <!-- Cab number plate -->
+            <rect x="60" y="82" width="28" height="10" rx="1" fill="rgba(0,212,255,0.08)" stroke="rgba(0,212,255,0.2)" stroke-width="0.8"/>
+            <text x="74" y="90" text-anchor="middle" fill="rgba(0,212,255,0.45)" font-family="JetBrains Mono,monospace" font-size="5.5">ТЭ33А</text>
+            <!-- Headlights -->
+            <circle cx="62" cy="48" r="5" fill="rgba(255,215,0,0.7)" filter="url(#glow-green)"/>
+            <circle cx="78" cy="48" r="5" fill="rgba(255,215,0,0.7)" filter="url(#glow-green)"/>
+            <!-- Marker lights red -->
+            <circle cx="52" cy="60" r="3" fill="rgba(255,80,80,0.6)" filter="url(#glow-green)"/>
+            <circle cx="52" cy="72" r="3" fill="rgba(255,80,80,0.6)" filter="url(#glow-green)"/>
+            <!-- Door -->
+            <rect x="100" y="100" width="25" height="55" rx="2" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <!-- Coupler A -->
+            <rect x="38" y="148" width="14" height="14" rx="2" fill="#091525" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <rect x="32" y="152" width="10" height="6" rx="1" fill="#060e1c"/>
+            <text x="89" y="132" text-anchor="middle" fill="rgba(0,212,255,0.5)" font-family="JetBrains Mono,monospace" font-size="6.5" letter-spacing="0.5">КАБИНА</text>
+            <text x="89" y="142" text-anchor="middle" fill="rgba(0,212,255,0.3)" font-family="JetBrains Mono,monospace" font-size="5.5">МАШИНИСТ</text>
+
+            <!-- === SECONDARY CAB (вторичная кабина) === -->
+            <rect id="part-cab2" class="loco-part" x="730" y="42" width="82" height="122" rx="5" fill="url(#cabGrad)" stroke="rgba(0,212,255,0.22)" stroke-width="1.5"/>
+            <rect x="737" y="54" width="26" height="24" rx="3" fill="rgba(0,212,255,0.05)" stroke="rgba(0,212,255,0.22)" stroke-width="1"/>
+            <rect x="767" y="54" width="36" height="24" rx="3" fill="rgba(0,212,255,0.07)" stroke="rgba(0,212,255,0.3)" stroke-width="1.2"/>
+            <line x1="769" y1="76" x2="801" y2="76" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+            <circle cx="782" cy="48" r="5" fill="rgba(255,215,0,0.7)" filter="url(#glow-green)"/>
+            <circle cx="798" cy="48" r="5" fill="rgba(255,215,0,0.7)" filter="url(#glow-green)"/>
+            <circle cx="808" cy="60" r="3" fill="rgba(255,80,80,0.6)" filter="url(#glow-green)"/>
+            <circle cx="808" cy="72" r="3" fill="rgba(255,80,80,0.6)" filter="url(#glow-green)"/>
+            <rect x="735" y="100" width="25" height="55" rx="2" fill="none" stroke="rgba(0,212,255,0.15)" stroke-width="0.8"/>
+            <rect x="808" y="148" width="14" height="14" rx="2" fill="#091525" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+            <rect x="818" y="152" width="10" height="6" rx="1" fill="#060e1c"/>
+            <text x="771" y="132" text-anchor="middle" fill="rgba(0,212,255,0.4)" font-family="JetBrains Mono,monospace" font-size="6.5" letter-spacing="0.5">КАБИНА Б</text>
+
+            <!-- === BOGIES — detailed (3-axis) === -->
+            <!-- Bogie 1 left -->
+            <g id="bogie1">
+              <rect x="60" y="160" width="140" height="14" rx="3" fill="url(#bogieGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+              <!-- spring suspension -->
+              <rect x="66"  y="157" width="16" height="7" rx="2" fill="#0b1628" stroke="rgba(0,212,255,0.18)" stroke-width="0.7"/>
+              <rect x="112" y="157" width="16" height="7" rx="2" fill="#0b1628" stroke="rgba(0,212,255,0.18)" stroke-width="0.7"/>
+              <rect x="158" y="157" width="16" height="7" rx="2" fill="#0b1628" stroke="rgba(0,212,255,0.18)" stroke-width="0.7"/>
+              <!-- wheels -->
+              <circle cx="74"  cy="176" r="10" fill="#0a1525" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+              <circle cx="74"  cy="176" r="4.5" fill="#070e1a"/>
+              <line x1="74" y1="166" x2="74" y2="186" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <line x1="64" y1="176" x2="84" y2="176" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <circle cx="120" cy="176" r="10" fill="#0a1525" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+              <circle cx="120" cy="176" r="4.5" fill="#070e1a"/>
+              <line x1="120" y1="166" x2="120" y2="186" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <line x1="110" y1="176" x2="130" y2="176" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <circle cx="166" cy="176" r="10" fill="#0a1525" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+              <circle cx="166" cy="176" r="4.5" fill="#070e1a"/>
+              <line x1="166" y1="166" x2="166" y2="186" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <line x1="156" y1="176" x2="176" y2="176" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <!-- brake pads -->
+              <rect x="67"  y="170" width="5" height="8" rx="1" fill="rgba(255,80,80,0.12)" stroke="rgba(255,80,80,0.18)" stroke-width="0.5"/>
+              <rect x="113" y="170" width="5" height="8" rx="1" fill="rgba(255,80,80,0.12)" stroke="rgba(255,80,80,0.18)" stroke-width="0.5"/>
+              <rect x="159" y="170" width="5" height="8" rx="1" fill="rgba(255,80,80,0.12)" stroke="rgba(255,80,80,0.18)" stroke-width="0.5"/>
+            </g>
+            <!-- Bogie 2 right -->
+            <g id="bogie2">
+              <rect x="660" y="160" width="140" height="14" rx="3" fill="url(#bogieGrad)" stroke="rgba(0,212,255,0.2)" stroke-width="1"/>
+              <rect x="666" y="157" width="16" height="7" rx="2" fill="#0b1628" stroke="rgba(0,212,255,0.18)" stroke-width="0.7"/>
+              <rect x="712" y="157" width="16" height="7" rx="2" fill="#0b1628" stroke="rgba(0,212,255,0.18)" stroke-width="0.7"/>
+              <rect x="758" y="157" width="16" height="7" rx="2" fill="#0b1628" stroke="rgba(0,212,255,0.18)" stroke-width="0.7"/>
+              <circle cx="674" cy="176" r="10" fill="#0a1525" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+              <circle cx="674" cy="176" r="4.5" fill="#070e1a"/>
+              <line x1="674" y1="166" x2="674" y2="186" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <line x1="664" y1="176" x2="684" y2="176" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <circle cx="720" cy="176" r="10" fill="#0a1525" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+              <circle cx="720" cy="176" r="4.5" fill="#070e1a"/>
+              <line x1="720" y1="166" x2="720" y2="186" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <line x1="710" y1="176" x2="730" y2="176" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <circle cx="766" cy="176" r="10" fill="#0a1525" stroke="rgba(0,212,255,0.3)" stroke-width="1.5"/>
+              <circle cx="766" cy="176" r="4.5" fill="#070e1a"/>
+              <line x1="766" y1="166" x2="766" y2="186" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <line x1="756" y1="176" x2="776" y2="176" stroke="rgba(0,212,255,0.18)" stroke-width="0.8"/>
+              <rect x="667" y="170" width="5" height="8" rx="1" fill="rgba(255,80,80,0.12)" stroke="rgba(255,80,80,0.18)" stroke-width="0.5"/>
+              <rect x="713" y="170" width="5" height="8" rx="1" fill="rgba(255,80,80,0.12)" stroke="rgba(255,80,80,0.18)" stroke-width="0.5"/>
+              <rect x="759" y="170" width="5" height="8" rx="1" fill="rgba(255,80,80,0.12)" stroke="rgba(255,80,80,0.18)" stroke-width="0.5"/>
+            </g>
+
+            <!-- === SECTION DIVIDERS / ACCESS DOORS === -->
+            <line x1="128" y1="52" x2="128" y2="166" stroke="rgba(0,212,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+            <line x1="170" y1="52" x2="170" y2="166" stroke="rgba(0,212,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+            <line x1="488" y1="52" x2="488" y2="166" stroke="rgba(0,212,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+            <line x1="622" y1="52" x2="622" y2="166" stroke="rgba(0,212,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+            <line x1="728" y1="52" x2="728" y2="166" stroke="rgba(0,212,255,0.12)" stroke-width="0.8" stroke-dasharray="4,3"/>
+          </svg>
+              <circle cx="622" cy="146" r="9" fill="#112038" stroke="#1e3a5f" stroke-width="1.5"/>
+              <circle cx="622" cy="146" r="4" fill="#0a0e17"/>
+              <circle cx="660" cy="146" r="9" fill="#112038" stroke="#1e3a5f" stroke-width="1.5"/>
+              <circle cx="660" cy="146" r="4" fill="#0a0e17"/>
+
+        </div>
+
+        <!-- LEGEND -->
+        <div class="loco-legend">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:2px;margin-bottom:4px" data-i18n="legend_title">СОСТОЯНИЕ УЗЛОВ</div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(0,255,136,0.3);border:1px solid var(--accent2)"></div><span data-i18n="legend_ok">Норма</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(255,215,0,0.4);border:1px solid var(--accent4)"></div><span data-i18n="legend_warn">Предупреждение</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:rgba(255,68,68,0.4);border:1px solid var(--warn)"></div><span data-i18n="legend_crit">Критично</span></div>
+          <div style="margin-top:8px;font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--muted);letter-spacing:1px;margin-bottom:4px" data-i18n="legend_parts">УЗЛЫ</div>
+          <div class="legend-item" style="gap:4px">
+            <div class="legend-dot" id="leg-engine" style="background:rgba(0,255,136,0.2);border:1px solid var(--accent2)"></div>
+            <span data-i18n="leg_engine">Дизель</span>
+          </div>
+          <div class="legend-item" style="gap:4px">
+            <div class="legend-dot" id="leg-oil" style="background:rgba(255,215,0,0.4);border:1px solid var(--accent4)"></div>
+            <span data-i18n="leg_oil">Масло двиг.</span>
+          </div>
+          <div class="legend-item" style="gap:4px">
+            <div class="legend-dot" id="leg-fuel" style="background:rgba(255,215,0,0.4);border:1px solid var(--accent4)"></div>
+            <span data-i18n="leg_fuel">Топливо</span>
+          </div>
+          <div class="legend-item" style="gap:4px">
+            <div class="legend-dot" id="leg-brakes" style="background:rgba(0,255,136,0.2);border:1px solid var(--accent2)"></div>
+            <span data-i18n="leg_brakes">Тормоза</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM STRIP -->
+    <div class="panel" style="grid-column:1/-1;grid-row:3;display:grid;grid-template-columns:2fr 1fr 1fr;gap:0;padding:8px 14px">
+      <div>
+        <div class="panel-label" data-i18n="chart_label">Скорость • последние 60 сек</div>
+        <div style="position:relative;height:88px"><canvas id="speedChart"></canvas></div>
+      </div>
+      <div style="border-left:1px solid rgba(0,212,255,0.08);padding-left:12px;margin-left:12px">
+        <div class="panel-label" data-i18n="route">Маршрут</div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:10px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="from">Откуда</span><span style="color:var(--accent)">Нур-Султан</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="to">Куда</span><span>Кокшетау</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="traveled">Пройдено</span><span style="color:var(--accent2)">142/305 км</span></div>
+          <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;margin-top:2px"><div style="height:100%;width:46%;background:var(--accent2);border-radius:2px"></div></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="arrival">Прибытие</span><span style="color:var(--accent4)">14:32</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text2)" data-i18n="next_stop">Следующий ост.</span><span>38 км</span></div>
+        </div>
+      </div>
+      <div style="border-left:1px solid rgba(0,212,255,0.08);padding-left:12px;margin-left:12px">
+        <div class="panel-label" data-i18n="limits">Ограничения</div>
+        <div style="display:flex;flex-direction:column;gap:4px;font-size:10px">
+          <div style="padding:4px 7px;background:rgba(255,215,0,0.08);border-radius:4px;border-left:2px solid var(--accent4)">
+            <div style="color:var(--accent4);font-weight:600">80 км/ч</div>
+            <div style="color:var(--text2);font-size:8px" data-i18n="limit1_sub">через 12 км (мост)</div>
+          </div>
+          <div style="padding:4px 7px;background:rgba(0,212,255,0.06);border-radius:4px;border-left:2px solid var(--accent)">
+            <div style="color:var(--accent);font-weight:600">90 км/ч</div>
+            <div style="color:var(--text2);font-size:8px" data-i18n="limit2_sub">текущий участок</div>
+          </div>
+          <div style="padding:4px 7px;background:rgba(0,255,136,0.06);border-radius:4px;border-left:2px solid var(--accent2)">
+            <div style="color:var(--accent2);font-weight:600">120 км/ч</div>
+            <div style="color:var(--text2);font-size:8px" data-i18n="limit3_sub">через 45 км</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-bar">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span data-i18n="section">СЕКЦИЯ А</span>
+      <span style="color:var(--muted)">|</span>
+      <span class="km" id="km-val">142.4 км</span>
+      <span style="color:var(--muted)">|</span>
+      <span data-i18n="delay">Задержка: <span style="color:var(--accent2)">+0 мин</span></span>
+    </div>
+    <div style="display:flex;gap:16px">
+      <span>ГГ: <span style="color:var(--accent2)" id="gg-val">530В</span></span>
+      <span>АКБ: <span style="color:var(--accent2)" id="akb-val">74В</span></span>
+      <span>КЛУБ: <span style="color:var(--accent2)" data-i18n="ok">ОК</span></span>
+      <span>ТСКБМ: <span style="color:var(--accent2)" data-i18n="ok2">ОК</span></span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+// ===== I18N =====
+const i18n = {
+  ru: {
+    driver:'МАШИНИСТ: Карпов А.С.',telemetry:'ТЕЛЕМЕТРИЯ АКТИВНА',
+    panel_traction:'Тяга и движение',traction_force:'Тяговое усилие',
+    brake_pressure:'Давление тормозов',norm:'НОРМА',km_pos:'Позиция КМ',traction:'ТЯГА',
+    axle_load:'Нагрузка на оси',axle1:'ось 1 (т)',axle2:'ось 2 (т)',axle3:'ось 3 (т)',axle4:'ось 4 (т)',
+    speed:'Скорость',kmh:'КМ/Ч',health_grade:'A • НОРМА',health_idx:'Индекс здоровья',
+    panel_resources:'Ресурсы и узлы',fuel:'Топливо',oil_temp:'Т масла двигателя',
+    rpm:'Обороты дизеля',rpm_unit:'об/мин',alerts:'Активные алерты',
+    alert1:'Т масла выше нормы (+8°C)',alert2:'Низкий уровень топлива — плановая заправка',
+    alert3:'Тормозная система — норма',alert4:'Напряжение ГГ 530В — норма',
+    loco_diagram:'Схема локомотива ТЭ33А',
+    legend_title:'СОСТОЯНИЕ УЗЛОВ',legend_ok:'Норма',legend_warn:'Предупреждение',legend_crit:'Критично',
+    legend_parts:'УЗЛЫ',leg_engine:'Дизель',leg_oil:'Масло двиг.',leg_fuel:'Топливо',leg_brakes:'Тормоза',
+    chart_label:'Скорость • последние 60 сек',route:'Маршрут',from:'Откуда',to:'Куда',
+    traveled:'Пройдено',arrival:'Прибытие',next_stop:'Следующий ост.',limits:'Ограничения',
+    limit1_sub:'через 12 км (мост)',limit2_sub:'текущий участок',limit3_sub:'через 45 км',
+    section:'СЕКЦИЯ А',delay:'Задержка: <span style="color:var(--accent2)">+0 мин</span>',ok:'ОК',ok2:'ОК',
+  },
+  kz: {
+    driver:'МАШИНИСТ: Карпов А.С.',telemetry:'ТЕЛЕМЕТРИЯ БЕЛСЕНДІ',
+    panel_traction:'Тарту және қозғалыс',traction_force:'Тарту күші',
+    brake_pressure:'Тежеуіш қысымы',norm:'НОРМА',km_pos:'КМ позициясы',traction:'ТАРТУ',
+    axle_load:'Осьтердегі жүктеме',axle1:'1-ось (т)',axle2:'2-ось (т)',axle3:'3-ось (т)',axle4:'4-ось (т)',
+    speed:'Жылдамдық',kmh:'КМ/САҒ',health_grade:'A • НОРМА',health_idx:'Денсаулық индексі',
+    panel_resources:'Ресурстар мен торабтар',fuel:'Отын',oil_temp:'Қозғалтқыш майының T°',
+    rpm:'Дизель айналымы',rpm_unit:'айн/мин',alerts:'Белсенді ескертулер',
+    alert1:'Май температурасы жоғары (+8°C)',alert2:'Отын деңгейі төмен — жоспарлы жанармай',
+    alert3:'Тежеуіш жүйесі — норма',alert4:'ГГ кернеуі 530В — норма',
+    loco_diagram:'ТЭ33А локомотив сызбасы',
+    legend_title:'ТОРАП КҮЙІ',legend_ok:'Норма',legend_warn:'Ескерту',legend_crit:'Сыни',
+    legend_parts:'ТОРАБТАР',leg_engine:'Дизель',leg_oil:'Қозғ. майы',leg_fuel:'Отын',leg_brakes:'Тежеуіш',
+    chart_label:'Жылдамдық • соңғы 60 сек',route:'Маршрут',from:'Қайдан',to:'Қайда',
+    traveled:'Өтілді',arrival:'Келу уақыты',next_stop:'Келесі аялдама',limits:'Шектеулер',
+    limit1_sub:'12 км-ден кейін (көпір)',limit2_sub:'ағымдағы учаске',limit3_sub:'45 км-ден кейін',
+    section:'А СЕКЦИЯ',delay:'Кешігу: <span style="color:var(--accent2)">+0 мин</span>',ok:'ОК',ok2:'ОК',
+  }
+};
+function setLang(lang){
+  const t=i18n[lang];
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const k=el.getAttribute('data-i18n');
+    if(t[k]!==undefined) el.innerHTML=t[k];
+  });
+  document.getElementById('btn-ru').classList.toggle('active',lang==='ru');
+  document.getElementById('btn-kz').classList.toggle('active',lang==='kz');
+}
+
+// ===== LOCOMOTIVE DIAGRAM STATUS =====
+// Define which parts correspond to which alerts
+// Status: 'ok' | 'warn' | 'crit'
+const partStatus = {
+  'part-engine':  'warn',   // oil temp high → engine warn
+  'part-cooling': 'warn',   // oil/cooling related
+  'part-fuel':    'warn',   // fuel < 50%
+  'part-brakes':  'ok',     // brakes ok
+  'part-cab':     'ok',
+  'part-cab2':    'ok',
+  'part-body':    'ok',
+  'part-exhaust': 'ok',
+  'part-generator':'ok',
+};
+
+function applyDiagramStatus() {
+  for (const [id, status] of Object.entries(partStatus)) {
+    const el = document.getElementById(id);
+    if (!el) continue;
+    el.classList.remove('loco-status-ok','loco-status-warn','loco-status-crit');
+    el.classList.add('loco-status-' + status);
+  }
+  updateLegendDot('leg-engine', partStatus['part-engine']);
+  updateLegendDot('leg-oil',    partStatus['part-engine']);
+  updateLegendDot('leg-fuel',   partStatus['part-fuel']);
+  updateLegendDot('leg-brakes', partStatus['part-brakes']);
+}
+
+function updateLegendDot(id, status) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const colors = { ok:'rgba(0,255,136,0.3)', warn:'rgba(255,215,0,0.5)', crit:'rgba(255,68,68,0.5)' };
+  const borders = { ok:'var(--accent2)', warn:'var(--accent4)', crit:'var(--warn)' };
+  el.style.background = colors[status];
+  el.style.borderColor = borders[status];
+}
+
+window.addEventListener('DOMContentLoaded', applyDiagramStatus);
+if (document.readyState !== 'loading') applyDiagramStatus();
+
+// ===== CHART =====
+const speedData=[82,85,86,87,88,87,85,86,87,88,87,87,86,87,88,87,86,86,87,88,89,88,87,87,86,85,86,87,87,88,87,86,87,88,87,86,85,84,85,86,87,87,86,85,86,87,88,87,87,86,85,86,87,87,87,88,87,87,86,87];
+const speedCanvas=document.getElementById('speedChart');
+const speedCtx=speedCanvas.getContext('2d');
+const speedChart=(window.Chart && speedCtx)?new Chart(speedCtx,{type:'line',data:{labels:speedData.map((_,i)=>i%10===0?-(60-i)+'s':''),datasets:[
+  {data:speedData,borderColor:'#00d4ff',borderWidth:1.5,pointRadius:0,tension:0.35,fill:true,backgroundColor:'rgba(0,212,255,0.06)'},
+  {data:speedData.map(()=>90),borderColor:'rgba(255,215,0,0.4)',borderWidth:1,borderDash:[4,4],pointRadius:0,fill:false}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+scales:{x:{display:false},y:{min:0,max:140,ticks:{color:'#4a6580',font:{size:9},stepSize:20},grid:{color:'rgba(255,255,255,0.04)'},border:{display:false}}},animation:{duration:0}}}):null;
+
+// ===== CLOCK =====
+function updateClock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('ru-RU')}
+updateClock(); setInterval(updateClock,1000);
+
+// ===== SPEED: now from WebSocket =====
+</script>
+
+<script>
+function applyDiagramStatusLive(partStatus){
+  Object.entries(partStatus).forEach(([id,status])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+
+    el.style.animation="";
+    if(status==="ok"){
+      el.style.filter="drop-shadow(0 0 6px #00ff88)";
+      el.style.stroke="#00ff88";
+    }
+    if(status==="warn"){
+      el.style.filter="drop-shadow(0 0 8px #ffd700)";
+      el.style.stroke="#ffd700";
+    }
+    if(status==="crit"){
+      el.style.filter="drop-shadow(0 0 10px #ff4444)";
+      el.style.stroke="#ff4444";
+      el.style.animation="blink-part 1s infinite";
+    }
+  });
+}
+
+function updateStatuses(data){
+  const partStatus={};
+
+  partStatus["part-brakes"]=data.pressure < 3 ? "crit" : data.pressure < 4.5 ? "warn" : "ok";
+  partStatus["part-engine"]=data.oilTemp > 90 ? "crit" : data.oilTemp > 75 ? "warn" : "ok";
+  partStatus["part-fuel"]=data.fuel < 20 ? "crit" : data.fuel < 50 ? "warn" : "ok";
+  partStatus["part-cooling"]=data.coolingTemp > 95 ? "crit" : data.coolingTemp > 80 ? "warn" : "ok";
+
+  applyDiagramStatusLive(partStatus);
+}
+
+const WS_URL = 'ws://localhost:8000/ws/loco/data';
+let wsRetryTimer = null;
+let smoothSpeedKmh = null;
+let smoothPressure = null;
+let smoothFuelPct = null;
+let smoothOilTemp = null;
+let smoothRpm = null;
+
+function pickNumber(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    const n = Number(v);
+    if (Number.isFinite(n)) return n;
+  }
+  return null;
+}
+
+function pickString(obj, keys) {
+  for (const k of keys) {
+    const v = obj?.[k];
+    if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+  }
+  return null;
+}
+
+function pickFuel(src) {
+  const litersDirect = pickNumber(src, [
+    'fuel_liters',
+    'fuel_litres',
+    'fuel_l',
+    'fuel_volume_l',
+    'fuel_volume',
+    'fuel_level_l',
+    'fuel_left_l',
+    'fuel_remaining_l',
+    'fuel_current_l',
+  ]);
+
+  const percentDirect = pickNumber(src, [
+    'fuel_percent',
+    'fuel_pct',
+    'fuel_level_pct',
+    'fuel_level_percent',
+  ]);
+
+  const fuelGeneric = pickNumber(src, ['fuel', 'fuel_level']);
+
+  let fuelLiters = Number.isFinite(litersDirect) ? litersDirect : null;
+  let fuelPercent = Number.isFinite(percentDirect) ? percentDirect : null;
+
+  if (!Number.isFinite(fuelLiters) && Number.isFinite(fuelGeneric) && fuelGeneric > 100) {
+    fuelLiters = fuelGeneric;
+  }
+  if (!Number.isFinite(fuelPercent) && Number.isFinite(fuelGeneric) && fuelGeneric >= 0 && fuelGeneric <= 100) {
+    fuelPercent = fuelGeneric;
+  }
+
+  const tankCapacityL = pickNumber(src, [
+    'fuel_tank_capacity_l',
+    'fuel_capacity_l',
+    'tank_capacity_l',
+    'fuel_tank_l',
+  ]);
+
+  if (!Number.isFinite(fuelLiters) && Number.isFinite(fuelPercent)) {
+    const cap = Number.isFinite(tankCapacityL) && tankCapacityL > 0 ? tankCapacityL : 6000;
+    fuelLiters = (fuelPercent / 100) * cap;
+  }
+  if (!Number.isFinite(fuelPercent) && Number.isFinite(fuelLiters)) {
+    const cap = Number.isFinite(tankCapacityL) && tankCapacityL > 0 ? tankCapacityL : 6000;
+    fuelPercent = cap > 0 ? (fuelLiters / cap) * 100 : null;
+  }
+
+  return { fuelLiters, fuelPercent, tankCapacityL };
+}
+
+function smooth(prev, next, alpha = 0.25) {
+  return prev === null ? next : (prev * (1 - alpha) + next * alpha);
+}
+
+function setText(id, value) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = value;
+}
+
+function setWidthPct(id, pct) {
+  const el = document.getElementById(id);
+  if (el) el.style.width = Math.max(0, Math.min(100, pct)).toFixed(0) + '%';
+}
+
+function setAlertState(rowId, status, text) {
+  const row = document.getElementById(rowId);
+  if (!row) return;
+  row.classList.remove('ok', 'warn');
+  if (status === 'ok') row.classList.add('ok');
+  if (status === 'warn' || status === 'crit') row.classList.add('warn');
+  if (text) {
+    const span = row.querySelector('span');
+    if (span) span.textContent = text;
+  }
+}
+
+function readSensorValue(src, sensorKey) {
+  const value = src?.sensors?.[sensorKey]?.value;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
+function readOilTempFromSensors(src) {
+  const sensors = src?.sensors;
+  if (!sensors || typeof sensors !== 'object') return null;
+  for (const [key, sensor] of Object.entries(sensors)) {
+    const label = String(sensor?.label ?? '').toLowerCase();
+    const keyLc = key.toLowerCase();
+    if (keyLc.includes('oil') || keyLc.includes('масл') || label.includes('oil') || label.includes('масл')) {
+      const n = Number(sensor?.value);
+      if (Number.isFinite(n)) return n;
+    }
+  }
+  return null;
+}
+
+function drawSpeedChartFallback() {
+  if (speedChart || !speedCtx || !speedCanvas) return;
+  const w = speedCanvas.clientWidth || 420;
+  const h = speedCanvas.clientHeight || 88;
+  if (speedCanvas.width !== w || speedCanvas.height !== h) {
+    speedCanvas.width = w;
+    speedCanvas.height = h;
+  }
+  speedCtx.clearRect(0, 0, w, h);
+  speedCtx.lineWidth = 1;
+  speedCtx.strokeStyle = 'rgba(255,255,255,0.08)';
+  for (let y = 0; y <= 140; y += 20) {
+    const yy = h - (y / 140) * h;
+    speedCtx.beginPath();
+    speedCtx.moveTo(0, yy);
+    speedCtx.lineTo(w, yy);
+    speedCtx.stroke();
+  }
+
+  speedCtx.lineWidth = 1.5;
+  speedCtx.strokeStyle = '#00d4ff';
+  speedCtx.beginPath();
+  for (let i = 0; i < speedData.length; i += 1) {
+    const x = (i / Math.max(1, speedData.length - 1)) * w;
+    const y = h - (Math.max(0, Math.min(140, speedData[i])) / 140) * h;
+    if (i === 0) speedCtx.moveTo(x, y); else speedCtx.lineTo(x, y);
+  }
+  speedCtx.stroke();
+}
+
+function normalizePayload(raw) {
+  const src = raw?.data && typeof raw.data === 'object' ? raw.data : raw;
+  if (!src || typeof src !== 'object') return null;
+
+  const type = String(src.type ?? '').toLowerCase().trim();
+  if (type && type !== 'diesel') return null;
+
+  const fuelInfo = pickFuel(src);
+  const axleLoads = Array.isArray(src.axle_loads_t)
+    ? src.axle_loads_t
+    : (Array.isArray(src.axle_loads) ? src.axle_loads : null);
+
+  return {
+    type: type || null,
+    speed: pickNumber(src, ['speed', 'velocity', 'v']),
+    pressure: pickNumber(src, ['pressure', 'brake_pressure']) ?? readSensorValue(src, 'BRAKE_PRESSURE'),
+    fuelPercent: Number.isFinite(fuelInfo.fuelPercent) ? fuelInfo.fuelPercent : null,
+    fuelLiters: Number.isFinite(fuelInfo.fuelLiters) ? fuelInfo.fuelLiters : null,
+    tankCapacityL: Number.isFinite(fuelInfo.tankCapacityL) ? fuelInfo.tankCapacityL : null,
+    oilTemp: pickNumber(src, ['oilTemp', 'oil_temp', 'engine_oil_temp', 'engine_oil_temp_c', 'oil_temperature_c'])
+      ?? readSensorValue(src, 'OIL_TEMP')
+      ?? readSensorValue(src, 'ENGINE_OIL_TEMP')
+      ?? readOilTempFromSensors(src)
+      ?? readSensorValue(src, 'OVERHEAT'),
+    coolingTemp: pickNumber(src, ['coolingTemp', 'cooling_temp', 'coolant_temp']),
+    distanceKm: pickNumber(src, ['distanceKm', 'distance_km', 'distance']),
+    tractionForceKn: pickNumber(src, ['traction_force_kn', 'tractive_effort_kn', 'traction_kn']),
+    kmPosition: pickString(src, ['km_position', 'controller_position', 'controller_pos', 'step']),
+    tractionMode: pickString(src, ['traction_mode', 'mode']),
+    rpm: pickNumber(src, ['rpm', 'engine_rpm', 'diesel_rpm']),
+    healthIndex: pickNumber(src, ['health_index', 'health']),
+    healthGrade: pickString(src, ['health_grade']),
+    ggVoltageV: pickNumber(src, ['generator_voltage_v', 'main_generator_voltage_v', 'voltage']),
+    batteryV: pickNumber(src, ['battery_v', 'battery_voltage']),
+    speedLimit: pickNumber(src, ['speed_limit_kmh', 'speed_limit']),
+    axleLoads: axleLoads,
+  };
+}
+
+function applyLiveData(d) {
+  if (Number.isFinite(d.speed)) {
+    const rawSpeed = Math.max(0, Math.min(140, d.speed));
+    smoothSpeedKmh = smooth(smoothSpeedKmh, rawSpeed, 0.22);
+    document.getElementById('spd').textContent = smoothSpeedKmh.toFixed(1);
+    const arc = document.getElementById('speed-arc');
+    const ratio = Math.max(0, Math.min(1, smoothSpeedKmh / 140));
+    arc.setAttribute('stroke-dashoffset', String(355 - (355 * ratio)));
+    if (speedChart) {
+      speedData.push(smoothSpeedKmh);
+      if (speedData.length > 60) speedData.shift();
+      speedChart.data.datasets[0].data = speedData;
+      speedChart.update('none');
+    } else {
+      speedData.push(smoothSpeedKmh);
+      if (speedData.length > 60) speedData.shift();
+      drawSpeedChartFallback();
+    }
+  }
+
+  if (Number.isFinite(d.speedLimit)) {
+    setText('speed-limit-val', d.speedLimit.toFixed(0));
+  }
+
+  if (Number.isFinite(d.tractionForceKn)) {
+    const tractionKn = Math.max(0, d.tractionForceKn);
+    setText('traction-val', tractionKn.toFixed(0));
+    const tractionPct = Math.max(0, Math.min(100, (tractionKn / 300) * 100));
+    setWidthPct('traction-bar', tractionPct);
+    setText('traction-pct', tractionPct.toFixed(0) + '%');
+  }
+
+  if (Number.isFinite(d.pressure)) {
+    smoothPressure = smooth(smoothPressure, d.pressure, 0.3);
+    setText('brake-val', smoothPressure.toFixed(2));
+    const pressPct = Math.max(0, Math.min(100, (smoothPressure / 7) * 100));
+    setWidthPct('brake-bar', pressPct);
+    const brakeStatus = document.getElementById('brake-status');
+    if (brakeStatus) {
+      if (smoothPressure < 3.5) {
+        brakeStatus.textContent = 'КРИТИЧНО';
+        brakeStatus.style.color = 'var(--warn)';
+      } else if (smoothPressure < 4.5) {
+        brakeStatus.textContent = 'ПРЕДУПР.';
+        brakeStatus.style.color = 'var(--accent4)';
+      } else {
+        brakeStatus.textContent = 'НОРМА';
+        brakeStatus.style.color = 'var(--accent2)';
+      }
+    }
+  }
+
+  if (d.kmPosition !== null) {
+    const asNum = Number(d.kmPosition);
+    setText('km-pos-val', Number.isFinite(asNum) ? `П-${asNum}` : d.kmPosition);
+  }
+  if (d.tractionMode) setText('traction-mode', d.tractionMode.toUpperCase());
+
+  if (Array.isArray(d.axleLoads)) {
+    for (let i = 0; i < 4; i += 1) {
+      const n = Number(d.axleLoads[i]);
+      if (Number.isFinite(n)) setText(`axle-${i + 1}-val`, n.toFixed(1));
+    }
+  }
+
+  if (Number.isFinite(d.healthIndex)) {
+    setText('health-score', d.healthIndex.toFixed(0));
+  }
+  if (d.healthGrade) {
+    setText('health-grade', `${d.healthGrade.toUpperCase()} • НОРМА`);
+  }
+
+  if (Number.isFinite(d.fuelPercent) || Number.isFinite(d.fuelLiters)) {
+    let fuelPct = d.fuelPercent;
+    if (!Number.isFinite(fuelPct) && Number.isFinite(d.fuelLiters)) {
+      const cap = Number.isFinite(d.tankCapacityL) && d.tankCapacityL > 0 ? d.tankCapacityL : 6000;
+      fuelPct = Math.max(0, Math.min(100, (d.fuelLiters / cap) * 100));
+    }
+    if (Number.isFinite(fuelPct)) {
+      smoothFuelPct = smooth(smoothFuelPct, fuelPct, 0.25);
+      setWidthPct('fuel-bar', smoothFuelPct);
+    }
+    if (Number.isFinite(d.fuelLiters)) {
+      setText('fuel-val', d.fuelLiters.toFixed(0));
+      setText('fuel-unit', 'л');
+      setText('fuel-pct', d.fuelLiters.toFixed(0) + ' л');
+    } else if (Number.isFinite(d.fuelPercent)) {
+      const cap = Number.isFinite(d.tankCapacityL) && d.tankCapacityL > 0 ? d.tankCapacityL : 6000;
+      const litersFromPct = Math.max(0, (d.fuelPercent / 100) * cap);
+      setText('fuel-val', litersFromPct.toFixed(0));
+      setText('fuel-unit', 'л');
+      setText('fuel-pct', litersFromPct.toFixed(0) + ' л');
+    }
+  }
+
+  if (Number.isFinite(d.oilTemp)) {
+    smoothOilTemp = smooth(smoothOilTemp, d.oilTemp, 0.25);
+    setText('oil-temp-val', smoothOilTemp.toFixed(1));
+    setWidthPct('oil-temp-bar', Math.max(0, Math.min(100, (smoothOilTemp / 120) * 100)));
+    setText('oil-trend', smoothOilTemp > 85 ? '↑' : '→');
+  }
+
+  if (Number.isFinite(d.rpm)) {
+    smoothRpm = smooth(smoothRpm, d.rpm, 0.2);
+    setText('rpm-val', smoothRpm.toFixed(0));
+    const rpmPct = Math.max(0, Math.min(100, (smoothRpm / 2400) * 100));
+    setWidthPct('rpm-bar', rpmPct);
+    setText('rpm-pct', rpmPct.toFixed(0) + '%');
+  }
+
+  if (Number.isFinite(d.distanceKm)) {
+    document.getElementById('km-val').textContent = d.distanceKm.toFixed(1) + ' км';
+  }
+
+  if (Number.isFinite(d.ggVoltageV)) setText('gg-val', d.ggVoltageV.toFixed(0) + 'В');
+  if (Number.isFinite(d.batteryV)) setText('akb-val', d.batteryV.toFixed(1) + 'В');
+
+  const pressureForStatus = Number.isFinite(d.pressure) ? d.pressure : 5.2;
+  const oilForStatus = Number.isFinite(d.oilTemp) ? d.oilTemp : 78;
+  const capForFuel = (Number.isFinite(d.tankCapacityL) && d.tankCapacityL > 0) ? d.tankCapacityL : 6000;
+  const fuelLitersForAlert = Number.isFinite(d.fuelLiters)
+    ? d.fuelLiters
+    : (Number.isFinite(d.fuelPercent) ? (d.fuelPercent / 100) * capForFuel : 2400);
+  const fuelForStatus = Number.isFinite(d.fuelPercent)
+    ? d.fuelPercent
+    : (Number.isFinite(d.fuelLiters)
+      ? (d.fuelLiters / capForFuel) * 100
+      : 40);
+  const coolingForStatus = Number.isFinite(d.coolingTemp) ? d.coolingTemp : 70;
+
+  updateStatuses({
+    pressure: pressureForStatus,
+    oilTemp: oilForStatus,
+    fuel: fuelForStatus,
+    coolingTemp: coolingForStatus,
+  });
+
+  setAlertState(
+    'alert1-row',
+    oilForStatus > 75 ? 'warn' : 'ok',
+    oilForStatus > 75 ? `Т масла выше нормы (${oilForStatus.toFixed(1)}°C)` : 'Т масла двигателя — норма'
+  );
+  setAlertState(
+    'alert2-row',
+    fuelForStatus < 50 ? 'warn' : 'ok',
+    fuelForStatus < 50
+      ? `Топливо ${fuelLitersForAlert.toFixed(0)} л — плановая заправка`
+      : `Топливо ${fuelLitersForAlert.toFixed(0)} л — норма`
+  );
+  setAlertState(
+    'alert3-row',
+    pressureForStatus < 4.5 ? 'warn' : 'ok',
+    pressureForStatus < 4.5 ? `Тормозная система — давление ${pressureForStatus.toFixed(2)} атм` : 'Тормозная система — норма'
+  );
+  const ggText = Number.isFinite(d.ggVoltageV) ? d.ggVoltageV.toFixed(0) : '530';
+  setAlertState('alert4-row', 'ok', `Напряжение ГГ ${ggText}В — норма`);
+}
+
+function connectWS() {
+  const ws = new WebSocket(WS_URL);
+  ws.onmessage = (event) => {
+    try {
+      const parsed = JSON.parse(event.data);
+      const normalized = normalizePayload(parsed);
+      if (normalized) applyLiveData(normalized);
+    } catch (_err) {}
+  };
+  ws.onclose = () => {
+    if (wsRetryTimer) clearTimeout(wsRetryTimer);
+    wsRetryTimer = setTimeout(connectWS, 1500);
+  };
+  ws.onerror = () => {
+    try { ws.close(); } catch (_e) {}
+  };
+}
+
+connectWS();
+drawSpeedChartFallback();
+window.addEventListener('resize', drawSpeedChartFallback);
+</script>
