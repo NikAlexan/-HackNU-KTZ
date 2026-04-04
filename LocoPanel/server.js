@@ -12,6 +12,12 @@ const WS_PATH = "/local/data";
 
 app.use(express.json({ limit: "64kb" }));
 app.use("/assets", express.static(path.join(__dirname, "assets")));
+app.use(
+  express.static(path.join(__dirname), {
+    index: false,
+    extensions: false,
+  })
+);
 
 let latestTelemetry = {
   type: "electro",

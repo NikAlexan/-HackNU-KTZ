@@ -1,0 +1,8 @@
+    html, body { margin: 0; height: 100%; background: #0b1020; color: #c9d6f2; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .top { height: 34px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; border-bottom: 1px solid #1e2f58; font-size: 12px; }
+    .status { opacity: 0.85; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; background: #f59e0b; }
+    .ok .dot { background: #22c55e; }
+    .err .dot { background: #ef4444; }
+    iframe { width: 100%; height: calc(100% - 35px); border: 0; display: block; }
+  
