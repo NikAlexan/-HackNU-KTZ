@@ -9,6 +9,7 @@ npm start
 Server starts on `http://localhost:3000` by default.
 
 ## Pages
+- Unified auto-switch panel (by `type`): `http://localhost:3000/panel`
 - Driver dashboard: `http://localhost:3000/driver`
 - Dispatcher dashboard: `http://localhost:3000/dispatcher`
 

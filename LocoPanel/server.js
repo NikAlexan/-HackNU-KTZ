@@ -74,7 +74,11 @@ function updateTelemetry(input, source = "api") {
 }
 
 app.get("/", (_req, res) => {
-  res.redirect("/driver");
+  res.sendFile(path.join(__dirname, "panel-router.html"));
+});
+
+app.get("/panel", (_req, res) => {
+  res.sendFile(path.join(__dirname, "panel-router.html"));
 });
 
 app.get("/driver", (_req, res) => {
@@ -83,6 +87,20 @@ app.get("/driver", (_req, res) => {
 
 app.get("/dispatcher", (_req, res) => {
   res.sendFile(path.join(__dirname, "dispatcher-dashboard.html"));
+});
+
+// Explicit routes requested by UI logic
+app.get("/electro-driver-dashboard", (_req, res) => {
+  res.sendFile(path.join(__dirname, "electro-driver-dashboard.html"));
+});
+
+app.get("/diesel-dispatcher-dashboard", (_req, res) => {
+  res.sendFile(path.join(__dirname, "diesel-dispatcher-dashboard.html"));
+});
+
+// Backward-compat aliases (typo-safe)
+app.get("/diesel-dispatche-dashboard", (_req, res) => {
+  res.redirect("/diesel-dispatcher-dashboard");
 });
 
 app.get("/api/telemetry", (_req, res) => {
@@ -143,8 +161,11 @@ setInterval(() => {
 
 server.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
+  console.log(`Unified panel:       http://localhost:${PORT}/panel`);
   console.log(`Driver dashboard:    http://localhost:${PORT}/driver`);
   console.log(`Dispatcher dashboard:http://localhost:${PORT}/dispatcher`);
+  console.log(`Electro dashboard:   http://localhost:${PORT}/electro-driver-dashboard`);
+  console.log(`Diesel dashboard:    http://localhost:${PORT}/diesel-dispatcher-dashboard`);
   console.log(`WebSocket endpoint:  ws://localhost:${PORT}${WS_PATH}`);
   console.log(`Push API endpoint:   http://localhost:${PORT}/api/telemetry`);
 });
