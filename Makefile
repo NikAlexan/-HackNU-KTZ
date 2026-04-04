@@ -1,7 +1,7 @@
 run:
-	cd $(CURDIR)/LocoApp && docker compose up -d
-	cd $(CURDIR)/LocoDashboard && docker compose up -d
+	cd $(CURDIR)/LocoAppBack && docker compose up -d
+	cd $(CURDIR)/LocoDashboardBack && docker compose up -d
 
 stop:
-	cd $(CURDIR)/LocoApp && docker compose down
-	cd $(CURDIR)/LocoDashboard && docker compose down
+	cd $(CURDIR)/LocoAppBack && docker compose down
+	cd $(CURDIR)/LocoDashboardBack && docker compose down

@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: locomotive_db
+    container_name: locomotive_back_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: locomotive_telemetry
@@ -19,13 +19,13 @@ services:
 
   app:
     build: .
-    container_name: locomotive_api
+    container_name: locomotive_back_api
     restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry
-      DASHBOARD_URL: http://dashboard_api:9000
+      DASHBOARD_URL: http://dashboard_back_api:9000
       LOCO_ID: kz8a-001
       LOCO_TYPE: diesel
       LOCO_SERIES: KZ8A
@@ -36,6 +36,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - loco_shared
+
+networks:
+  loco_shared:
+    external: true
 
 volumes:
   postgres_data:

@@ -1,7 +1,7 @@
 services:
   db:
     image: postgres:16-alpine
-    container_name: dashboard_db
+    container_name: dashboard_back_db
     restart: unless-stopped
     environment:
       POSTGRES_DB: loco_dashboard
@@ -19,7 +19,7 @@ services:
 
   app:
     build: .
-    container_name: dashboard_api
+    container_name: dashboard_back_api
     restart: unless-stopped
     ports:
       - "9000:9000"
@@ -32,6 +32,13 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - loco_shared
+
+networks:
+  loco_shared:
+    name: loco_shared
 
 volumes:
   dashboard_postgres_data:
