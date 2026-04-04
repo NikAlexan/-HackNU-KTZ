@@ -1,35 +1,25 @@
-# Python
-__pycache__/
-*.py[cod]
-*.pyo
-*.pyd
-.Python
-*.egg-info/
-dist/
-build/
-.eggs/
+# Dependencies
+node_modules/
 
-# Virtual environments
-.venv/
-venv/
-env/
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
 
-# Environment variables
+# Environment files
 .env
 .env.*
 !.env.example
 
-# IDE
-.idea/
-.vscode/
-*.iml
-
-# Docker
-*.log
-
-# OS
+# OS / editor
 .DS_Store
-Thumbs.db
+.vscode/
+.idea/
 
-# Alembic
-alembic/versions/*.pyc
+# Build / cache
+dist/
+build/
+.cache/
+coverage/
