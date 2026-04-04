@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: locomotive_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: locomotive_telemetry
+      POSTGRES_USER: loco_user
+      POSTGRES_PASSWORD: loco_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U loco_user -d locomotive_telemetry"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: .
+    container_name: locomotive_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry
+      DASHBOARD_URL: http://dashboard_api:9000
+      LOCO_ID: kz8a-001
+      LOCO_TYPE: diesel
+      LOCO_SERIES: KZ8A
+      REPORTER_API_KEY: super-secret-key-change-me
+    volumes:
+      - .:/app
+      - /app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
