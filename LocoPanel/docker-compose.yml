@@ -1,0 +1,13 @@
+services:
+  app:
+    build: .
+    container_name: loco_panel_ui
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+      HOST: "0.0.0.0"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    restart: unless-stopped
