@@ -43,6 +43,7 @@ async def _build_summary() -> list[dict]:
                 "status": loco.status,
                 "health_index": loco.health_index,
                 "health_grade": loco.health_grade,
+                "component_health": loco.component_health or {},
                 "last_aggregate": None,
             }
 
@@ -51,12 +52,11 @@ async def _build_summary() -> list[dict]:
                     "period_start": agg.period_start.isoformat(),
                     "period_end": agg.period_end.isoformat(),
                     "avg_speed_kmh": agg.avg_speed_kmh,
-                    "max_temp_c": agg.max_temp_c,
-                    "min_voltage_kv": agg.min_voltage_kv,
                     "avg_health_index": agg.avg_health_index,
                     "final_health_grade": agg.final_health_grade,
                     "readings_count": agg.readings_count,
                     "error_count": agg.error_count,
+                    "metrics_json": agg.metrics_json or {},
                 }
 
             summary.append(entry)

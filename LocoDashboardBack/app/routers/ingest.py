@@ -30,11 +30,15 @@ class LocoAggregate(BaseModel):
     loco_type: str
     readings_count: int
     avg_speed_kmh: float
-    max_temp_c: float
-    min_voltage_kv: float | None = None
     avg_health_index: float
     final_health_grade: HealthGrade
     error_count: int
+    component_health: dict | None = None
+    component_risks: dict | None = None
+    metrics_json: dict | None = None
+    # Legacy fields — kept optional for backward compatibility
+    max_temp_c: float | None = None
+    min_voltage_kv: float | None = None
 
 
 class AggregatePayload(BaseModel):
@@ -61,11 +65,12 @@ async def receive_aggregate(
                 period_end=payload.period_end,
                 readings_count=loco.readings_count,
                 avg_speed_kmh=loco.avg_speed_kmh,
-                max_temp_c=loco.max_temp_c,
+                max_temp_c=loco.max_temp_c or 0.0,
                 min_voltage_kv=loco.min_voltage_kv,
                 avg_health_index=loco.avg_health_index,
                 final_health_grade=loco.final_health_grade,
                 error_count=loco.error_count,
+                metrics_json=loco.metrics_json,
             )
         )
 
@@ -74,5 +79,9 @@ async def receive_aggregate(
             db_loco.status = LocoStatus.IN_MOTION if loco.avg_speed_kmh > 1.0 else LocoStatus.STOPPED
             db_loco.health_index = loco.avg_health_index
             db_loco.health_grade = HealthGrade(loco.final_health_grade)
+            if loco.component_health is not None:
+                db_loco.component_health = loco.component_health
+            if loco.component_risks is not None:
+                db_loco.component_risks = loco.component_risks
 
     await session.commit()

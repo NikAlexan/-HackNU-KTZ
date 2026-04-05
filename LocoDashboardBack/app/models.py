@@ -105,6 +105,8 @@ class Locomotive(Base):
     )
     health_index: Mapped[float] = mapped_column(sa.Float, nullable=False)
     health_grade: Mapped[HealthGrade] = mapped_column(health_grade_enum, nullable=False)
+    component_health: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
+    component_risks: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         sa.TIMESTAMP(timezone=True), server_default=sa.func.now()
     )
@@ -232,3 +234,4 @@ class TelemetryAggregate(Base):
     avg_health_index: Mapped[float] = mapped_column(sa.Float, nullable=False)
     final_health_grade: Mapped[str] = mapped_column(sa.String(1), nullable=False)
     error_count: Mapped[int] = mapped_column(sa.Integer, nullable=False)
+    metrics_json: Mapped[dict | None] = mapped_column(sa.JSON, nullable=True)

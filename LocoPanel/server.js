@@ -6,7 +6,7 @@ const { WebSocketServer } = require("ws");
 const app = express();
 const server = http.createServer(app);
 
-const PORT = Number(process.env.PORT || 3000);
+const PORT = Number(process.env.PORT || 4000);
 const HOST = process.env.HOST || "127.0.0.1";
 const WS_PATH = "/local/data";
 

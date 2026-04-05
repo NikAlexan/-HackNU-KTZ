@@ -54,6 +54,14 @@
 
   <div class="loco-detail-body">
     <div class="section">
+      <div class="section-title">Состояние узлов (накопительное)</div>
+      <div class="comp-panel" id="comp-panel">
+        <div style="font-size:10px;color:var(--t3);padding:8px 0">Ожидание данных...</div>
+      </div>
+      <button class="repair-btn" id="repair-btn" disabled onclick="repairSelected()">Отправить выбранные в ТО</button>
+    </div>
+
+    <div class="section">
       <div class="section-title">Индекс здоровья — последние 12 агрегатов</div>
       <div class="chart-wrap"><canvas id="healthChart"></canvas></div>
     </div>

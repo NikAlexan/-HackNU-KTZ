@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
@@ -20,13 +21,26 @@ class GeneratedReading(Base):
     traction_mode: Mapped[str] = mapped_column(sa.String(10), nullable=False)
     health_index: Mapped[float] = mapped_column(sa.Float, nullable=False)
     health_grade: Mapped[str] = mapped_column(sa.String(1), nullable=False)
-    brake_pressure_atm: Mapped[float] = mapped_column(sa.Float, nullable=False)
     error_code: Mapped[str | None] = mapped_column(sa.String(10), nullable=True)
-    # ELECTRIC fields
-    catenary_voltage_kv: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
-    transformer_temp_c: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
-    power_consumption_kw: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
-    # DIESEL fields
-    oil_temp_c: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
-    fuel_level_liters: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
-    engine_rpm: Mapped[float | None] = mapped_column(sa.Float, nullable=True)
+    # All sensor readings stored dynamically — no fixed type-specific columns
+    sensors_json: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
+
+
+class ComponentHealth(Base):
+    """Persistent cumulative health state per locomotive component node."""
+
+    __tablename__ = "component_health"
+
+    loco_id: Mapped[str] = mapped_column(sa.String(64), primary_key=True)
+    component: Mapped[str] = mapped_column(sa.String(64), primary_key=True)
+    health: Mapped[float] = mapped_column(sa.Float, nullable=False, default=100.0)
+    risk_accum: Mapped[float] = mapped_column(sa.Float, nullable=False, default=0.0)
+    last_repair: Mapped[Optional[datetime]] = mapped_column(
+        sa.TIMESTAMP(timezone=True), nullable=True
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        sa.TIMESTAMP(timezone=True),
+        server_default=sa.text("now()"),
+        onupdate=sa.func.now(),
+        nullable=False,
+    )

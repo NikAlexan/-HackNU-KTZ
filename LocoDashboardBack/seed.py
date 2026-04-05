@@ -37,7 +37,7 @@ DSN = _raw_url.replace("postgresql+asyncpg://", "postgresql://")
 ROUTES = [
     {
         "id": "route-ast-kks",
-        "from_station": "Нур-Султан",
+        "from_station": "Астана",
         "to_station": "Кокшетау",
         "total_km": 305.0,
         "electrified": True,
@@ -55,7 +55,7 @@ ROUTES = [
     },
     {
         "id": "route-ast-ptr",
-        "from_station": "Нур-Султан",
+        "from_station": "Астана",
         "to_station": "Петропавловск",
         "total_km": 465.0,
         "electrified": True,
@@ -75,14 +75,14 @@ ROUTES = [
 
 WAYPOINTS = [
     # route-ast-kks
-    {"route_id": "route-ast-kks", "name": "Нур-Султан", "km_mark": 0.0, "lat": 51.18, "lon": 71.45, "speed_limit_kmh": 80},
+    {"route_id": "route-ast-kks", "name": "Астана", "km_mark": 0.0, "lat": 51.18, "lon": 71.45, "speed_limit_kmh": 80},
     {"route_id": "route-ast-kks", "name": "Макинск", "km_mark": 150.0, "lat": 52.63, "lon": 70.86, "speed_limit_kmh": 100},
     {"route_id": "route-ast-kks", "name": "Кокшетау", "km_mark": 305.0, "lat": 53.28, "lon": 69.39, "speed_limit_kmh": 60},
     # route-kks-ptr
     {"route_id": "route-kks-ptr", "name": "Кокшетау", "km_mark": 0.0, "lat": 53.28, "lon": 69.39, "speed_limit_kmh": 60},
     {"route_id": "route-kks-ptr", "name": "Петропавловск", "km_mark": 160.0, "lat": 54.87, "lon": 69.16, "speed_limit_kmh": 80},
     # route-ast-ptr
-    {"route_id": "route-ast-ptr", "name": "Нур-Султан", "km_mark": 0.0, "lat": 51.18, "lon": 71.45, "speed_limit_kmh": 80},
+    {"route_id": "route-ast-ptr", "name": "Астана", "km_mark": 0.0, "lat": 51.18, "lon": 71.45, "speed_limit_kmh": 80},
     {"route_id": "route-ast-ptr", "name": "Кокшетау", "km_mark": 305.0, "lat": 53.28, "lon": 69.39, "speed_limit_kmh": 60},
     {"route_id": "route-ast-ptr", "name": "Петропавловск", "km_mark": 465.0, "lat": 54.87, "lon": 69.16, "speed_limit_kmh": 80},
     # route-kks-depot

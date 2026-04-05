@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: loco_user
       POSTGRES_PASSWORD: loco_pass
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -30,6 +30,7 @@ services:
       LOCO_TYPE: electro
       LOCO_SERIES: KZ8A
       REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/kz8a_electro.yaml
     volumes:
       - .:/app
       - /app/.venv
@@ -53,6 +54,7 @@ services:
       LOCO_TYPE: electro
       LOCO_SERIES: KZ8A
       REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/kz8a_electro.yaml
     volumes:
       - .:/app
       - /app/.venv
@@ -76,6 +78,7 @@ services:
       LOCO_TYPE: diesel
       LOCO_SERIES: TE33A
       REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/te33a_diesel.yaml
     volumes:
       - .:/app
       - /app/.venv
@@ -99,6 +102,7 @@ services:
       LOCO_TYPE: diesel
       LOCO_SERIES: TE33A
       REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/te33a_diesel.yaml
     volumes:
       - .:/app
       - /app/.venv

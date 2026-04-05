@@ -10,6 +10,7 @@ import app.models  # noqa: F401 — registers models on Base.metadata
 from app.generator import run_generator
 from app.register import register_in_dashboard
 from app.reporter import run_reporter
+from app.routers.maintenance import router as maintenance_router
 from app.routers.ws import router as ws_router
 
 DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:9000")
@@ -28,6 +29,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="LocoAppBack", lifespan=lifespan)
 app.include_router(ws_router)
+app.include_router(maintenance_router)
 
 
 @app.get("/")

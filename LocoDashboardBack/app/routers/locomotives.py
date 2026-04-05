@@ -77,6 +77,8 @@ async def list_locomotives(
             "status": loco.status,
             "health_index": loco.health_index,
             "health_grade": loco.health_grade,
+            "component_health": loco.component_health or {},
+            "component_risks": loco.component_risks or {},
             "route_id": loco.route_id,
         }
         for loco in locos
@@ -110,17 +112,18 @@ async def get_locomotive(
         "status": loco.status,
         "health_index": loco.health_index,
         "health_grade": loco.health_grade,
+        "component_health": loco.component_health or {},
+        "component_risks": loco.component_risks or {},
         "route_id": loco.route_id,
         "recent_aggregates": [
             {
                 "period_start": a.period_start,
                 "period_end": a.period_end,
                 "avg_speed_kmh": a.avg_speed_kmh,
-                "max_temp_c": a.max_temp_c,
-                "min_voltage_kv": a.min_voltage_kv,
                 "avg_health_index": a.avg_health_index,
                 "final_health_grade": a.final_health_grade,
                 "error_count": a.error_count,
+                "metrics_json": a.metrics_json or {},
             }
             for a in aggregates
         ],

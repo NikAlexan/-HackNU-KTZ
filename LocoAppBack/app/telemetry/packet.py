@@ -1,29 +1,22 @@
 """
 BCK-3 packet assembly.
 
-Converts simulation state + health metrics into the JSON payload
-sent to the WebSocket client.
+Assembles the JSON payload sent over WebSocket to dashboard clients.
+Accepts the flat sensors dict from extract_sensors() — no direct knowledge
+of the simulation state structure.
+
+Legacy helpers (state_to_reading, calculate_health_index) are removed;
+health calculation is now in health.py.
 """
 from datetime import datetime, timezone
 
 from app.telemetry.sensors import build_sensors
 
 
-def state_to_reading(state: dict, loco_type: str) -> dict:
-    """Flatten simulation state into the dict format expected by calculate_health_index."""
-    r: dict = {
-        "brake_pressure_atm": state["brake"],
-        "error_code": state.get("error_code"),
-    }
-    if loco_type == "electro":
-        r["transformer_temp_c"] = state["transformer_temp"]
-        r["catenary_voltage_kv"] = state["catenary_v"]
-        for i, c in enumerate(state["td_currents"], 1):
-            r[f"td{i}_current_a"] = c
-    else:
-        r["oil_temp_c"] = state["oil_temp"]
-        r["fuel_level_liters"] = state["fuel"]
-    return r
+def _overall_health(component_snap: dict[str, float]) -> float:
+    if not component_snap:
+        return 100.0
+    return round(sum(component_snap.values()) / len(component_snap), 1)
 
 
 def build_packet(
@@ -31,9 +24,12 @@ def build_packet(
     series: str,
     loco_type: str,
     step: int,
-    state: dict,
+    state: dict,              # raw state — for metadata and array fields (td_currents, axle_loads)
+    sensors: dict,            # flat sensor readings from extract_sensors()
     health_index: float,
     health_grade: str,
+    component_health: dict[str, float] | None = None,
+    component_risks: dict[str, float] | None = None,
 ) -> dict:
     packet: dict = {
         # BCK header
@@ -43,48 +39,30 @@ def build_packet(
         "series": series,
         "ts": datetime.now(tz=timezone.utc).isoformat(),
         "step": step,
-        # Traction parameters
+        # Traction metadata
         "speed": round(state["speed"], 1),
         "traction_mode": state["traction_mode"],
         "km_position": state["km_position"],
-        "battery_v": state["battery"],
-        "pressure": state["brake"],
+        "error_code": state.get("error_code"),
         # Health
         "health_index": health_index,
         "health_grade": health_grade,
-        "error_code": state.get("error_code"),
-        # Sensor subsystems
-        "sensors": build_sensors(state, loco_type),
+        "component_health": component_health or {},
+        "component_risks": component_risks or {},
+        "overall_health": _overall_health(component_health or {}),
+        # All scalar sensor readings (from sensors_extract)
+        "sensors": sensors,
+        # Legacy sensor subsystem display (thresholds + status labels)
+        "sensor_systems": build_sensors(state, loco_type),
     }
 
+    # Array fields (not stored in sensors_json due to size — included in WS packet only)
     if loco_type == "electro":
-        packet.update(
-            {
-                "catenary_voltage_kv": state["catenary_v"],
-                "pantograph_current_a": state.get("pantograph_current"),
-                "power_consumption_kw": state.get("power_kw"),
-                "regen_power_kw": state.get("regen_power"),
-                "power_factor": state.get("power_factor"),
-                "transformer_temp_c": state["transformer_temp"],
-                "td_currents_a": [round(c, 1) for c in state["td_currents"]],
-                "td_temps_c": [round(t, 1) for t in state["td_temps"]],
-                "pantograph_up": state.get("pantograph_up", True),
-                "regen_energy_kwh": round(state["regen_energy"], 3),
-            }
-        )
+        packet["td_currents_a"] = [round(c, 1) for c in state["td_currents"]]
+        packet["td_temps_c"] = [round(t, 1) for t in state["td_temps"]]
+        packet["pantograph_up"] = state.get("pantograph_up", True)
+        packet["regen_energy_kwh"] = round(state["regen_energy"], 3)
     else:
-        packet.update(
-            {
-                "fuel": round(state["fuel"], 1),
-                "fuel_consumption_lh": state.get("fuel_consumption"),
-                "engine_rpm": state["engine_rpm"],
-                "oil_temp_c": state["oil_temp"],
-                "coolant_temp_c": state["coolant_temp"],
-                "oil_pressure_bar": state["oil_pressure"],
-                "traction_force_kn": state.get("traction_force"),
-                "main_gen_voltage_v": state.get("main_gen_v"),
-                "axle_loads_t": [round(a, 2) for a in state["axle_loads"]],
-            }
-        )
+        packet["axle_loads_t"] = [round(a, 2) for a in state["axle_loads"]]
 
     return packet

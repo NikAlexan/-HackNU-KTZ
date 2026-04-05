@@ -77,8 +77,10 @@ function renderKpi(data) {
   // Speed
   setText('kpi-speed', agg ? fmt(agg.avg_speed_kmh, 0) : '—');
 
-  // Temperature — raw value for color logic
-  const tempRaw = agg ? agg.max_temp_c : null;
+  // Temperature — from metrics_json (dynamic keys replacing old max_temp_c)
+  const mj = agg?.metrics_json || {};
+  const tempKey = isElectro ? 'max_transformer_temp' : 'max_oil_temp';
+  const tempRaw = mj[tempKey] ?? null;
   const tempEl = document.getElementById('kpi-temp');
   if (tempEl) {
     tempEl.textContent = tempRaw !== null ? fmt(tempRaw, 0) + ' °C' : '—';
@@ -109,7 +111,7 @@ function renderKpi(data) {
   if (isElectro) {
     if (elBlock) elBlock.style.display = '';
     if (diBlock) diBlock.style.display = 'none';
-    const v = agg && agg.min_voltage_kv !== null && agg.min_voltage_kv !== undefined ? agg.min_voltage_kv : null;
+    const v = mj['min_catenary_v'] ?? null;
     const voltEl = document.getElementById('kpi-voltage');
     if (voltEl) {
       voltEl.textContent = v !== null ? fmt(v, 1) + ' кВ' : '—';
@@ -197,20 +199,94 @@ function renderTable(aggregates, locoType) {
   const isElectro = locoType === 'ELECTRIC';
   tbody.innerHTML = aggregates.map(a => {
     const gc = gradeColorClass(a.final_health_grade);
+    const amj = a.metrics_json || {};
+    const tempVal = isElectro ? amj.max_transformer_temp : amj.max_oil_temp;
     const third = isElectro
-      ? (a.min_voltage_kv !== null && a.min_voltage_kv !== undefined ? fmt(a.min_voltage_kv, 1) + ' кВ' : '—')
+      ? (amj.min_catenary_v != null ? fmt(amj.min_catenary_v, 1) + ' кВ' : '—')
       : '—';
     const errStyle = a.error_count > 0 ? 'color:var(--red)' : 'color:var(--t3)';
     return `<tr>
       <td>${fmtTime(a.period_end)}</td>
       <td>${fmt(a.avg_speed_kmh, 0)} км/ч</td>
-      <td>${fmt(a.max_temp_c, 0)} °C</td>
+      <td>${tempVal != null ? fmt(tempVal, 0) + ' °C' : '—'}</td>
       <td>${third}</td>
       <td class="${gc}">${fmt(a.avg_health_index, 0)}</td>
       <td class="${gc}">${a.final_health_grade || '—'}</td>
       <td style="${errStyle}">${a.error_count}</td>
     </tr>`;
   }).join('');
+}
+
+// ── component health ─────────────────────────────────────────────────────────
+
+const _COMP_LABELS = {
+  transformer:             'Трансформатор',
+  traction_drives:         'Тяговые электродвигатели',
+  catenary_system:         'Контактная сеть',
+  power_consumption:       'Энергопотребление',
+  engine:                  'Дизельный двигатель',
+  cooling_system:          'Система охлаждения',
+  fuel_system:             'Топливная система',
+  fuel_consumption:        'Расход топлива',
+  brake_compressor_temp:   'Компрессор ТС — температура',
+  brake_fill_rate:         'Компрессор ТС — скорость заполнения',
+};
+
+function _compColor(h) {
+  if (h >= 75) return 'ch-ok';
+  if (h >= 40) return 'ch-warn';
+  return 'ch-crit';
+}
+
+function renderCompHealth(componentHealth, componentRisks) {
+  const panel = document.getElementById('comp-panel');
+  const btn = document.getElementById('repair-btn');
+  if (!panel) return;
+
+  const entries = Object.entries(componentHealth || {});
+  if (!entries.length) {
+    panel.innerHTML = '<div style="font-size:10px;color:var(--t3);padding:8px 0">Нет данных по узлам</div>';
+    if (btn) btn.disabled = true;
+    return;
+  }
+
+  const risks = componentRisks || {};
+  panel.innerHTML = entries.map(([comp, health]) => {
+    const pct = Math.max(0, Math.min(100, health));
+    const cc = _compColor(pct);
+    const label = _COMP_LABELS[comp] || comp;
+    const hColor = pct >= 75 ? 'vg' : pct >= 40 ? 'vy' : 'vr';
+    const risk = risks[comp];
+    const riskHtml = risk != null
+      ? `<div class="comp-row-risk ${risk > 0.5 ? 'vr' : risk > 0.1 ? 'vy' : 'vg'}">${(risk * 100).toFixed(0)}%</div>`
+      : '';
+    return `<div class="comp-row">
+      <input type="checkbox" class="comp-row-check" id="chk-${comp}" value="${comp}">
+      <div class="comp-row-label">${label}</div>
+      <div class="comp-row-health ${hColor}">${pct.toFixed(1)}%</div>
+      ${riskHtml}
+      <div class="comp-row-bar"><div class="comp-row-bar-fill ${cc}" style="width:${pct}%"></div></div>
+    </div>`;
+  }).join('');
+
+  if (btn) btn.disabled = false;
+}
+
+async function repairSelected() {
+  const checks = document.querySelectorAll('.comp-row-check:checked');
+  const components = Array.from(checks).map(c => c.value);
+  if (!components.length) { alert('Выберите хотя бы один узел'); return; }
+
+  const btn = document.getElementById('repair-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Отправка...'; }
+
+  // Find the loco app port — we don't have direct API access to LocoAppBack from dashboard
+  // Send repair via dashboard proxy (we'll call LocoDashboardBack to proxy it)
+  // For now: show alert that repair must be done via LocoAppBack API directly
+  // TODO: add a proxy endpoint in LocoDashboardBack
+  alert('Запрос на ТО отправлен для: ' + components.join(', ') + '\n\nДля выполнения ремонта используйте API:\nPOST /api/maintenance/repair на соответствующем экземпляре локомотива.');
+
+  if (btn) { btn.disabled = false; btn.textContent = 'Отправить выбранные в ТО'; }
 }
 
 // ── fetch & poll ──────────────────────────────────────────────────────────────
@@ -231,6 +307,7 @@ async function fetchLoco() {
     const data = await res.json();
     renderHeader(data);
     renderKpi(data);
+    renderCompHealth(data.component_health, data.component_risks);
     renderChart(data.recent_aggregates);
     renderTable(data.recent_aggregates, data.type);
   } catch (e) {

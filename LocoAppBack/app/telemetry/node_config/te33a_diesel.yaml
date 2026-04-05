@@ -1,0 +1,64 @@
+# Node health configuration for TE33A diesel locomotive
+#
+# damage_rate: health points lost per second at risk_level = 1.0
+#   100 / 0.00347 ≈ 28 820 sec ≈ 8 hours at max continuous risk → health = 0
+#
+# exponent: controls how fast risk grows with deviation from norm
+#   1.0 — linear (equal damage at every step beyond warn)
+#   2.0 — quadratic: slow damage near warn, accelerating toward crit
+#   3.0 — cubic: only severe deviations cause real damage
+
+damage_rate: 0.00347
+
+norms:
+  fuel_nominal_lh: 300     # Nominal fuel consumption at rated load (L/h)
+
+components:
+  engine:
+    label: "Дизельный двигатель"
+    state_key: oil_temp
+    risk_type: linear_hi
+    warn: 80               # °C — risk starts
+    crit: 105              # °C — risk = 1.0
+    exponent: 2.5          # slow wear near 80°C, sharp above ~95°C
+
+  cooling_system:
+    label: "Система охлаждения"
+    state_key: coolant_temp
+    risk_type: linear_hi
+    warn: 80               # °C — risk starts
+    crit: 100              # °C — risk = 1.0
+    exponent: 2.0
+
+  fuel_system:
+    label: "Топливная система"
+    state_key: fuel
+    risk_type: linear_lo   # risk grows as fuel level drops
+    warn: 4000             # L — risk starts
+    crit: 300              # L — risk = 1.0 (reserve level)
+    exponent: 1.0          # resource metric — linear depletion
+
+  fuel_consumption:
+    label: "Расход топлива"
+    state_key: fuel_consumption
+    risk_type: ratio_hi    # compares to norms.fuel_nominal_lh
+    norm_key: fuel_nominal_lh
+    warn_pct: 115          # % of nominal — risk starts
+    crit_pct: 140          # % of nominal — risk = 1.0
+    exponent: 1.0          # overrun is uniformly harmful — linear
+
+  brake_compressor_temp:
+    label: "Компрессор ТС — температура"
+    state_key: compressor_temp
+    risk_type: linear_hi
+    warn: 60               # °C — risk starts
+    crit: 100              # °C — risk = 1.0
+    exponent: 2.5
+
+  brake_fill_rate:
+    label: "Компрессор ТС — скорость заполнения"
+    state_key: brake_fill_rate
+    risk_type: linear_hi
+    warn: 0.08             # atm/sec — normal max fill rate
+    crit: 0.25             # atm/sec — excessive (compressor racing)
+    exponent: 3.0

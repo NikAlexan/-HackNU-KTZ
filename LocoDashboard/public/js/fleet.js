@@ -74,6 +74,50 @@ function mm(val, label, colorCls, pct, barCls) {
   return `<div class="mm"><div class="mv ${colorCls}">${val}</div><div class="ml">${label}</div>${bar(pct, barCls)}</div>`;
 }
 
+// ── component health mini bar ─────────────────────────────────────────────────
+
+const _COMP_SHORT = {
+  transformer:             'Тр',
+  traction_drives:         'ТЭД',
+  catenary_system:         'КС',
+  power_consumption:       'P',
+  engine:                  'Дв',
+  cooling_system:          'Охл',
+  fuel_system:             'Топл',
+  fuel_consumption:        'Расх',
+  brake_compressor_temp:   'КмпТ',
+  brake_fill_rate:         'КмпЗ',
+};
+
+const _COMP_FULL = {
+  transformer:             'Трансформатор',
+  traction_drives:         'Тяговые электродвигатели',
+  catenary_system:         'Контактная сеть',
+  power_consumption:       'Энергопотребление',
+  engine:                  'Дизельный двигатель',
+  cooling_system:          'Система охлаждения',
+  fuel_system:             'Топливная система',
+  fuel_consumption:        'Расход топлива',
+  brake_compressor_temp:   'Компрессор ТС — температура',
+  brake_fill_rate:         'Компрессор ТС — скорость заполнения',
+};
+
+function buildCompGrid(componentHealth) {
+  if (!componentHealth || !Object.keys(componentHealth).length) return '';
+  const items = Object.entries(componentHealth).map(([comp, h]) => {
+    const pct = Math.max(0, Math.min(100, h));
+    const cc = pct >= 75 ? 'ch-ok' : pct >= 40 ? 'ch-warn' : 'ch-crit';
+    const short = _COMP_SHORT[comp] || comp.slice(0, 3);
+    const full = _COMP_FULL[comp] || comp;
+    return `<div class="comp-item" title="${full}: ${pct.toFixed(0)}%">
+      <div class="comp-val" style="color:${pct>=75?'var(--grn)':pct>=40?'var(--amb)':'var(--red)'}">${pct.toFixed(0)}</div>
+      <div class="comp-bar-wrap"><div class="comp-bar-fill ${cc}" style="width:${pct}%"></div></div>
+      <div class="comp-label">${short}</div>
+    </div>`;
+  }).join('');
+  return `<div class="comp-grid">${items}</div>`;
+}
+
 // ── card builder ─────────────────────────────────────────────────────────────
 
 function buildCard(loco) {
@@ -100,8 +144,10 @@ function buildCard(loco) {
   const speedVal = agg ? Math.round(agg.avg_speed_kmh || 0) : 0;
   const speedDisp = agg ? String(speedVal) : '—';
 
-  // Temperature (raw number for color logic)
-  const tempRaw = agg ? (agg.max_temp_c || 0) : null;
+  // Temperature (raw number for color logic) — from metrics_json
+  const amj = agg?.metrics_json || {};
+  const tempKey = t.isElectro ? 'max_transformer_temp' : 'max_oil_temp';
+  const tempRaw = amj[tempKey] ?? null;
   const tempDisp = tempRaw !== null ? fmt(tempRaw, 0) + '°' : '—';
   const tempColor = tempRaw === null ? 'vg' : tempRaw > 90 ? 'vr' : tempRaw > 75 ? 'vy' : 'vg';
   const tempBarCls = tempRaw === null ? 'fg' : tempRaw > 90 ? 'fr' : tempRaw > 75 ? 'fy' : 'fg';
@@ -118,8 +164,8 @@ function buildCard(loco) {
   // 3rd cell: voltage (electro) or error count (diesel)
   let cell3;
   if (t.isElectro) {
-    if (agg && agg.min_voltage_kv !== null && agg.min_voltage_kv !== undefined) {
-      const v = agg.min_voltage_kv;
+    const v = amj.min_catenary_v ?? null;
+    if (v !== null) {
       const vPct = Math.round(((v - 18) / (27 - 18)) * 100);
       const vColor = v < 21 ? 'vy' : 'vp';
       const vBar = v < 21 ? 'fy' : 'fp';
@@ -155,6 +201,7 @@ function buildCard(loco) {
       ${bar(healthPct, bc)}
     </div>
   </div>
+  ${buildCompGrid(loco.component_health)}
 </div>`;
 }
 

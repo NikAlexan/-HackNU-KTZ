@@ -92,8 +92,11 @@ def init_state(loco_type: str) -> dict:
             "transformer_temp": 45.0,
             "td_currents": [350.0] * 8,
             "td_temps": [55.0] * 8,
+            "td_currents_max": 350.0,
             "pantograph_up": True,
             "regen_energy": 0.0,
+            "compressor_temp": 35.0,
+            "brake_fill_rate": 0.0,
             "error_code": None,
         }
     else:
@@ -109,6 +112,8 @@ def init_state(loco_type: str) -> dict:
             "main_gen_v": 540.0,
             "traction_force": 0.0,
             "axle_loads": [18.0, 18.0, 18.0, 18.0],
+            "compressor_temp": 35.0,
+            "brake_fill_rate": 0.0,
             "error_code": None,
         }
 
@@ -274,6 +279,29 @@ def evolve_state(
             s["error_code"] = "E011"
 
         s["traction_mode"] = traction_mode
+
+    # Derived scalar sensors (both types)
+    dt_sec = INTERVAL_MS / 1000
+    # brake_fill_rate: pressure DROP = compressor refilling reservoir (atm/sec)
+    s["brake_fill_rate"] = round(max(0.0, (state["brake"] - s["brake"]) / dt_sec), 4)
+    if loco_type == "electro":
+        s["td_currents_max"] = round(max(s["td_currents"]), 1)
+
+    # Compressor temperature (shared: electro + diesel)
+    # Load model:
+    #   BRAKE mode        → high load (air consumed, compressor must refill after)
+    #   TRACTION/IDLE after pressure drop (brake > 5.5) → moderate load (refilling)
+    #   Cruise at normal pressure → minimal load (maintenance)
+    if traction_mode == "BRAKE":
+        compressor_load = 0.85
+    elif s["brake"] > 5.6:
+        compressor_load = 0.55   # refilling reservoirs after braking
+    else:
+        compressor_load = 0.10   # idle / maintenance
+    dT_comp = (compressor_load * 2.2 - 0.9) * dt_min + _gauss(0, 0.04)
+    s["compressor_temp"] = round(
+        max(28.0, min(130.0, state.get("compressor_temp", 35.0) + dT_comp)), 1
+    )
 
     s["km_position"] = km_position
     return s

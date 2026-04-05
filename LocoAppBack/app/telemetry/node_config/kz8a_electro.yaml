@@ -1,0 +1,64 @@
+# Node health configuration for KZ8A electric locomotive
+#
+# damage_rate: health points lost per second at risk_level = 1.0
+#   100 / 0.00347 ≈ 28 820 sec ≈ 8 hours at max continuous risk → health = 0
+#
+# exponent: controls how fast risk grows with deviation from norm
+#   1.0 — linear (equal damage at every step beyond warn)
+#   2.0 — quadratic: slow damage near warn, accelerating toward crit
+#   3.0 — cubic: even more pronounced, only severe deviations cause real damage
+
+damage_rate: 0.00347
+
+norms:
+  power_nominal_kw: 5520   # Rated traction power of the KZ8A model (kW)
+
+components:
+  transformer:
+    label: "Трансформатор"
+    state_key: transformer_temp
+    risk_type: linear_hi     # risk grows above warn threshold
+    warn: 70                 # °C — risk starts
+    crit: 95                 # °C — risk = 1.0
+    exponent: 2.5            # slow growth near 70°C, sharp above ~85°C
+
+  traction_drives:
+    label: "Тяговые электродвигатели"
+    state_key: td_currents_max   # tracker resolves max(state["td_currents"])
+    risk_type: linear_hi
+    warn: 550                # A — risk starts
+    crit: 650                # A — risk = 1.0
+    exponent: 3.0            # near 550A almost no damage; near 650A — rapid wear
+
+  catenary_system:
+    label: "Контактная сеть"
+    state_key: catenary_v
+    risk_type: linear_lo     # risk grows BELOW warn (25 kV nominal — only undervoltage is dangerous)
+    warn: 23                 # kV — risk starts when voltage drops below this
+    crit: 20                 # kV — risk = 1.0
+    exponent: 2.0            # moderate voltage dips cause slow wear; deep sag causes rapid damage
+
+  power_consumption:
+    label: "Энергопотребление"
+    state_key: power_kw
+    risk_type: ratio_hi      # compares to norms.power_nominal_kw
+    norm_key: power_nominal_kw
+    warn_pct: 110            # % of nominal — risk starts
+    crit_pct: 130            # % of nominal — risk = 1.0
+    exponent: 2.0
+
+  brake_compressor_temp:
+    label: "Компрессор ТС — температура"
+    state_key: compressor_temp
+    risk_type: linear_hi
+    warn: 60                 # °C — risk starts (typical operating range up to ~60°C)
+    crit: 100                # °C — risk = 1.0 (thermal damage zone)
+    exponent: 2.5            # slow wear in normal range, sharp near thermal limit
+
+  brake_fill_rate:
+    label: "Компрессор ТС — скорость заполнения"
+    state_key: brake_fill_rate   # derived: max(0, delta_brake / dt) injected by tracker
+    risk_type: linear_hi
+    warn: 0.08               # atm/sec — normal max fill rate under load
+    crit: 0.25               # atm/sec — excessive fill rate (compressor racing)
+    exponent: 3.0            # only aggressive fill cycles cause real wear
