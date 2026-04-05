@@ -17,9 +17,9 @@ services:
       timeout: 5s
       retries: 5
 
-  app:
+  app_kz8a_001:
     build: .
-    container_name: locomotive_back_api
+    container_name: loco_kz8a_001
     restart: unless-stopped
     ports:
       - "8000:8000"
@@ -27,8 +27,77 @@ services:
       DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry
       DASHBOARD_URL: http://dashboard_back_api:9000
       LOCO_ID: kz8a-001
-      LOCO_TYPE: diesel
+      LOCO_TYPE: electro
       LOCO_SERIES: KZ8A
+      REPORTER_API_KEY: super-secret-key-change-me
+    volumes:
+      - .:/app
+      - /app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - loco_shared
+
+  app_kz8a_002:
+    build: .
+    container_name: loco_kz8a_002
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry
+      DASHBOARD_URL: http://dashboard_back_api:9000
+      LOCO_ID: kz8a-002
+      LOCO_TYPE: electro
+      LOCO_SERIES: KZ8A
+      REPORTER_API_KEY: super-secret-key-change-me
+    volumes:
+      - .:/app
+      - /app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - loco_shared
+
+  app_te33a_001:
+    build: .
+    container_name: loco_te33a_001
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry
+      DASHBOARD_URL: http://dashboard_back_api:9000
+      LOCO_ID: te33a-001
+      LOCO_TYPE: diesel
+      LOCO_SERIES: TE33A
+      REPORTER_API_KEY: super-secret-key-change-me
+    volumes:
+      - .:/app
+      - /app/.venv
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - default
+      - loco_shared
+
+  app_te33a_002:
+    build: .
+    container_name: loco_te33a_002
+    restart: unless-stopped
+    ports:
+      - "8003:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry
+      DASHBOARD_URL: http://dashboard_back_api:9000
+      LOCO_ID: te33a-002
+      LOCO_TYPE: diesel
+      LOCO_SERIES: TE33A
       REPORTER_API_KEY: super-secret-key-change-me
     volumes:
       - .:/app
