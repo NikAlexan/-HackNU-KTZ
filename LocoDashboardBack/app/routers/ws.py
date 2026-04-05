@@ -1,11 +1,13 @@
 """
 WebSocket /ws/locomotives
 
-Streams a summary of all locomotives every 3 seconds:
-  - identity + status + health
-  - latest 5-minute aggregate metrics
+One background task builds the summary once every 3 seconds and broadcasts
+it to all connected clients. DB is queried once per tick regardless of how
+many clients are connected.
 """
 import asyncio
+import json
+import logging
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
@@ -16,8 +18,16 @@ from app.models import Locomotive, TelemetryAggregate
 from app.routers.auth import decode_token
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 _INTERVAL_SEC = 3
+
+# ---------------------------------------------------------------------------
+# Broadcaster — shared state
+# ---------------------------------------------------------------------------
+
+_clients: set[WebSocket] = set()
+_broadcast_task: asyncio.Task | None = None
 
 
 async def _build_summary() -> list[dict]:
@@ -44,6 +54,7 @@ async def _build_summary() -> list[dict]:
                 "health_index": loco.health_index,
                 "health_grade": loco.health_grade,
                 "component_health": loco.component_health or {},
+                "component_risks": loco.component_risks or {},
                 "last_aggregate": None,
             }
 
@@ -64,6 +75,39 @@ async def _build_summary() -> list[dict]:
     return summary
 
 
+async def _broadcaster() -> None:
+    """Single loop: query DB once, send to all clients."""
+    while True:
+        await asyncio.sleep(_INTERVAL_SEC)
+        if not _clients:
+            continue
+        try:
+            summary = await _build_summary()
+            message = json.dumps(summary, default=str)
+        except Exception as exc:
+            logger.warning("Broadcaster failed to build summary: %s", exc)
+            continue
+
+        dead: set[WebSocket] = set()
+        for ws in list(_clients):
+            try:
+                await ws.send_text(message)
+            except Exception:
+                dead.add(ws)
+
+        _clients.difference_update(dead)
+
+
+def _ensure_broadcaster() -> None:
+    global _broadcast_task
+    if _broadcast_task is None or _broadcast_task.done():
+        _broadcast_task = asyncio.create_task(_broadcaster())
+
+
+# ---------------------------------------------------------------------------
+# Endpoint
+# ---------------------------------------------------------------------------
+
 @router.websocket("/ws/locomotives")
 async def locomotives_stream(websocket: WebSocket) -> None:
     token = websocket.query_params.get("token")
@@ -77,10 +121,22 @@ async def locomotives_stream(websocket: WebSocket) -> None:
         return
 
     await websocket.accept()
+    _ensure_broadcaster()
+    _clients.add(websocket)
+
+    # Send current state immediately on connect — don't wait for next tick
     try:
+        summary = await _build_summary()
+        await websocket.send_text(json.dumps(summary, default=str))
+    except Exception:
+        _clients.discard(websocket)
+        return
+
+    try:
+        # Keep connection alive — broadcaster pushes updates
         while True:
-            summary = await _build_summary()
-            await websocket.send_json(summary)
-            await asyncio.sleep(_INTERVAL_SEC)
+            await websocket.receive_text()
     except WebSocketDisconnect:
         pass
+    finally:
+        _clients.discard(websocket)

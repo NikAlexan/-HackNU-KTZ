@@ -36,6 +36,7 @@ if LOCO_TYPE == "electro":
 # Shared state — WebSocket clients and maintenance router read from here
 latest_packet: dict | None = None
 tracker: ComponentHealthTracker | None = None
+active_scenario: str | None = None  # overridden via /api/maintenance/incident
 
 
 async def run_generator() -> None:
@@ -55,8 +56,12 @@ async def run_generator() -> None:
     while True:
         now = datetime.now(tz=timezone.utc)
 
-        # 1. Physics
-        state = evolve_state(state, LOCO_TYPE, scenario, step % _TOTAL_STEPS, _TOTAL_STEPS)
+        # 1. Physics — use overridden scenario if set
+        # When forced, use step=5500 so all time-gated effects are already active
+        # (OVERHEAT kicks in at t>=1800s → step>=3600; CRITICAL_ALERT at t>=2700s → step>=5400)
+        current = active_scenario if active_scenario is not None else scenario
+        sim_step = 5500 if active_scenario is not None else step % _TOTAL_STEPS
+        state = evolve_state(state, LOCO_TYPE, current, sim_step, _TOTAL_STEPS)
 
         # 2. Sensor extraction — flat dict, single source of truth for all downstream
         sensors = extract_sensors(state, LOCO_TYPE)
@@ -87,6 +92,7 @@ async def run_generator() -> None:
                 health_grade=health_grade,
                 error_code=state.get("error_code"),
                 sensors_json=sensors,
+                component_risks_json=component_risks,
             ))
             await session.commit()
 

@@ -33,6 +33,7 @@ async def _build_aggregate(period_start: datetime, period_end: datetime) -> dict
                 GeneratedReading.health_grade,
                 GeneratedReading.error_code,
                 GeneratedReading.sensors_json,
+                GeneratedReading.component_risks_json,
             ).where(
                 GeneratedReading.ts >= period_start,
                 GeneratedReading.ts < period_end,
@@ -81,12 +82,16 @@ async def _build_aggregate(period_start: datetime, period_end: datetime) -> dict
             else None
         )
 
-        # Current instantaneous risk per component (from latest WS packet)
-        comp_risks = (
-            generator.latest_packet.get("component_risks")
-            if generator.latest_packet is not None
-            else None
-        )
+        # Average component risk over the period (from DB rows, not latest snapshot)
+        risk_vals: dict[str, list[float]] = defaultdict(list)
+        for row in loco_rows:
+            for comp, risk in (row.component_risks_json or {}).items():
+                if isinstance(risk, (int, float)):
+                    risk_vals[comp].append(float(risk))
+        comp_risks = {
+            comp: round(sum(vals) / len(vals), 4)
+            for comp, vals in risk_vals.items()
+        } or None
 
         locomotives.append({
             "loco_id": loco_id,

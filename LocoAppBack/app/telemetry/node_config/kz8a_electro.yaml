@@ -1,6 +1,7 @@
 # Node health configuration for KZ8A electric locomotive
 #
 # damage_rate: health points lost per second at risk_level = 1.0
+#   100 / 0.02 = 5000 sec ≈ 83 min at max continuous risk → health = 0
 #   100 / 0.00347 ≈ 28 820 sec ≈ 8 hours at max continuous risk → health = 0
 #
 # exponent: controls how fast risk grows with deviation from norm
@@ -8,7 +9,7 @@
 #   2.0 — quadratic: slow damage near warn, accelerating toward crit
 #   3.0 — cubic: even more pronounced, only severe deviations cause real damage
 
-damage_rate: 0.00347
+damage_rate: 0.02
 
 norms:
   power_nominal_kw: 5520   # Rated traction power of the KZ8A model (kW)

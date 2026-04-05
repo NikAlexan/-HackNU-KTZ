@@ -24,6 +24,8 @@ class GeneratedReading(Base):
     error_code: Mapped[str | None] = mapped_column(sa.String(10), nullable=True)
     # All sensor readings stored dynamically — no fixed type-specific columns
     sensors_json: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
+    # Instantaneous component risk per tick — averaged over period in reporter
+    component_risks_json: Mapped[dict] = mapped_column(sa.JSON, nullable=False, default=dict)
 
 
 class ComponentHealth(Base):
