@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Вход — LocoDashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+    .login-box{background:var(--bg2);border:1px solid var(--brd);border-radius:10px;padding:32px 28px;width:320px}
+    .login-title{font-size:18px;font-weight:700;margin-bottom:4px}
+    .login-sub{font-size:11px;color:var(--t2);margin-bottom:22px}
+    .lf-label{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--t2);margin-bottom:4px}
+    .lf-input{width:100%;padding:8px 10px;border:1px solid var(--brd2);border-radius:5px;background:var(--bg3);font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--t1);outline:none;margin-bottom:14px}
+    .lf-input:focus{border-color:var(--blue)}
+    .lf-btn{width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:700;cursor:pointer;letter-spacing:.5px}
+    .lf-btn:hover{opacity:.9}
+    .lf-err{font-size:11px;color:var(--red);margin-top:10px;min-height:16px;text-align:center}
+  </style>
+</head>
+<body>
+<div class="login-wrap">
+  <div class="login-box">
+    <div class="login-title">АРМ ДИСПЕТЧЕРА</div>
+    <div class="login-sub">LocoDashboard · Введите учётные данные</div>
+    <form id="login-form" autocomplete="on">
+      <div class="lf-label">Логин</div>
+      <input class="lf-input" type="text" id="username" name="username" autocomplete="username" required>
+      <div class="lf-label">Пароль</div>
+      <input class="lf-input" type="password" id="password" name="password" autocomplete="current-password" required>
+      <button class="lf-btn" type="submit">ВОЙТИ</button>
+      <div class="lf-err" id="err-msg"></div>
+    </form>
+  </div>
+</div>
+<script>
+  const API = 'http://localhost:9000';
+  const KEY = 'loco_token';
+
+  // Already logged in — skip login page
+  if (localStorage.getItem(KEY)) location.href = '/';
+
+  document.getElementById('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const errEl = document.getElementById('err-msg');
+    errEl.textContent = '';
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value;
+    try {
+      const res = await fetch(API + '/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      if (res.status === 401) { errEl.textContent = 'Неверный логин или пароль'; return; }
+      if (!res.ok) { errEl.textContent = 'Ошибка сервера: ' + res.status; return; }
+      const data = await res.json();
+      localStorage.setItem(KEY, data.access_token);
+      location.href = '/';
+    } catch (err) {
+      errEl.textContent = 'Нет связи с сервером';
+    }
+  });
+</script>
+</body>
+</html>

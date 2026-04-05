@@ -1,5 +1,7 @@
 'use strict';
 
+checkAuth(); // redirect to /login.html if no token
+
 const DASHBOARD_WS = 'ws://localhost:9000/ws/locomotives';
 
 // Clock
@@ -352,7 +354,7 @@ let ws = null;
 
 function connect() {
   setWsStatus(false, 'Подключение...');
-  ws = new WebSocket(DASHBOARD_WS);
+  ws = new WebSocket(DASHBOARD_WS + '?token=' + encodeURIComponent(getToken()));
 
   ws.onopen = () => {
     setWsStatus(true, '● WS подключён');
@@ -369,7 +371,8 @@ function connect() {
     renderStats(locos);
   };
 
-  ws.onclose = () => {
+  ws.onclose = (e) => {
+    if (e.code === 4001) { logout(); return; }
     setWsStatus(false, '● Нет соединения');
     setText('fstat', 'WS: отключён | переподключение через 5 сек...');
     setTimeout(connect, 5000);

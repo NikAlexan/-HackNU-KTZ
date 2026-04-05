@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_session
 from app.models import Locomotive, LocoStatus, LocoType, TelemetryAggregate
 from app.routers.ingest import _API_KEY
+from app.routers.auth import require_user
 
 router = APIRouter()
 
@@ -60,7 +61,10 @@ async def register_locomotive(
 
 
 @router.get("/locomotives")
-async def list_locomotives(session: AsyncSession = Depends(get_session)) -> list[dict]:
+async def list_locomotives(
+    session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_user),
+) -> list[dict]:
     result = await session.execute(select(Locomotive).order_by(Locomotive.id))
     locos = result.scalars().all()
     return [
@@ -83,6 +87,7 @@ async def list_locomotives(session: AsyncSession = Depends(get_session)) -> list
 async def get_locomotive(
     loco_id: str,
     session: AsyncSession = Depends(get_session),
+    _: str = Depends(require_user),
 ) -> dict:
     loco = await session.get(Locomotive, loco_id)
     if loco is None:

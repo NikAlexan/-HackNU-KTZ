@@ -5,3 +5,6 @@ sqlalchemy[asyncio]==2.0.40
 alembic==1.15.2
 psycopg2-binary==2.9.9
 python-dotenv==1.0.1
+python-jose[cryptography]==3.3.0
+bcrypt==4.2.1
+python-multipart==0.0.9

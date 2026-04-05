@@ -8,10 +8,12 @@ Streams a summary of all locomotives every 3 seconds:
 import asyncio
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+
 from sqlalchemy import desc, select
 
 from app.database import AsyncSessionLocal
 from app.models import Locomotive, TelemetryAggregate
+from app.routers.auth import decode_token
 
 router = APIRouter()
 
@@ -64,6 +66,16 @@ async def _build_summary() -> list[dict]:
 
 @router.websocket("/ws/locomotives")
 async def locomotives_stream(websocket: WebSocket) -> None:
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001)
+        return
+    try:
+        decode_token(token)
+    except Exception:
+        await websocket.close(code=4001)
+        return
+
     await websocket.accept()
     try:
         while True:

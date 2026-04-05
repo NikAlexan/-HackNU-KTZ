@@ -203,6 +203,17 @@ class Event(Base):
     loco: Mapped["Locomotive"] = relationship("Locomotive", back_populates="events")
 
 
+class User(Base):
+    __tablename__ = "users"
+
+    id: Mapped[int] = mapped_column(sa.Integer, primary_key=True, autoincrement=True)
+    username: Mapped[str] = mapped_column(sa.String(64), unique=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(sa.String(256), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        sa.TIMESTAMP(timezone=True), server_default=sa.func.now()
+    )
+
+
 class TelemetryAggregate(Base):
     """5-minute aggregate received from loco-app reporter."""
 

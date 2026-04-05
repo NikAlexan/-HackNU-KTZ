@@ -1,6 +1,7 @@
 'use strict';
 
-const DASHBOARD_API = 'http://localhost:9000';
+checkAuth(); // redirect to /login.html if no token
+
 const locoId = new URLSearchParams(location.search).get('id');
 
 if (!locoId) location.href = '/';
@@ -216,7 +217,10 @@ function renderTable(aggregates, locoType) {
 
 async function fetchLoco() {
   try {
-    const res = await fetch(`${DASHBOARD_API}/api/locomotives/${encodeURIComponent(locoId)}`);
+    const res = await fetch(`${DASHBOARD_API}/api/locomotives/${encodeURIComponent(locoId)}`, {
+      headers: authHeaders(),
+    });
+    if (res.status === 401) { logout(); return; }
     if (res.status === 404) {
       setText('loco-title', 'Локомотив не найден');
       setText('loco-sub', locoId);
