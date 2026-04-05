@@ -168,8 +168,6 @@ setInterval(() => {
 server.listen(PORT, HOST, () => {
   console.log(`Server running at http://${HOST}:${PORT}`);
   console.log(`Unified panel:       http://localhost:${PORT}/panel`);
-  console.log(`Driver dashboard:    http://localhost:${PORT}/driver`);
-  console.log(`Dispatcher dashboard:http://localhost:${PORT}/dispatcher`);
   console.log(`Electro dashboard:   http://localhost:${PORT}/electro-driver-dashboard`);
   console.log(`Diesel dashboard:    http://localhost:${PORT}/diesel-dispatcher-dashboard`);
   console.log(`WebSocket endpoint:  ws://localhost:${PORT}${WS_PATH}`);
