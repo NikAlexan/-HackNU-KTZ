@@ -1,3 +1,4 @@
+import asyncio
 import os
 from contextlib import asynccontextmanager
 
@@ -8,6 +9,7 @@ from sqlalchemy import select
 from app.database import engine, AsyncSessionLocal
 import app.models  # noqa: F401 — registers models on Base.metadata
 from app.models import User
+from app.mqtt_subscriber import run_mqtt_subscriber
 from app.routers.auth import router as auth_router, _hash_password
 from app.routers.ingest import router as ingest_router
 from app.routers.locomotives import router as locos_router
@@ -33,7 +35,9 @@ async def _seed_admin() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await _seed_admin()
+    sub_task = asyncio.create_task(run_mqtt_subscriber())
     yield
+    sub_task.cancel()
     await engine.dispose()
 
 

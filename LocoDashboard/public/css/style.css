@@ -117,3 +117,13 @@ body{background:var(--bg);font-family:'Rajdhani',sans-serif;font-size:13px;color
 .repair-btn{margin-top:8px;padding:6px 14px;background:var(--blue);color:#fff;border:none;border-radius:5px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;cursor:pointer;letter-spacing:.5px}
 .repair-btn:hover{background:#155998}
 .repair-btn:disabled{background:var(--t3);cursor:not-allowed}
+
+/* LIVE SENSOR PANEL */
+.sensor-panel{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:6px}
+.sensor-row{display:flex;flex-direction:column;padding:7px 10px;background:var(--bg3);border-radius:6px;border:.5px solid var(--brd);border-left:3px solid var(--brd2)}
+.sensor-row.s-ok{border-left-color:var(--grn-m)}
+.sensor-row.s-warn{border-left-color:var(--amb-m);background:var(--amb-l)}
+.sensor-row.s-crit{border-left-color:var(--red-m);background:var(--red-l)}
+.sensor-label{font-size:8px;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;font-family:'JetBrains Mono',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sensor-val{font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1.2;margin-top:2px}
+.sensor-unit{font-size:8px;color:var(--t2);margin-top:1px}

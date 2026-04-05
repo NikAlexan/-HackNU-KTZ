@@ -31,6 +31,7 @@ services:
       LOCO_SERIES: KZ8A
       REPORTER_API_KEY: super-secret-key-change-me
       LOCO_NODE_CONFIG: /app/app/telemetry/node_config/kz8a_electro.yaml
+      MQTT_URL: mqtt://loco_mqtt:1883
     volumes:
       - .:/app
       - /app/.venv
@@ -55,6 +56,7 @@ services:
       LOCO_SERIES: KZ8A
       REPORTER_API_KEY: super-secret-key-change-me
       LOCO_NODE_CONFIG: /app/app/telemetry/node_config/kz8a_electro.yaml
+      MQTT_URL: mqtt://loco_mqtt:1883
     volumes:
       - .:/app
       - /app/.venv
@@ -79,6 +81,7 @@ services:
       LOCO_SERIES: TE33A
       REPORTER_API_KEY: super-secret-key-change-me
       LOCO_NODE_CONFIG: /app/app/telemetry/node_config/te33a_diesel.yaml
+      MQTT_URL: mqtt://loco_mqtt:1883
     volumes:
       - .:/app
       - /app/.venv
@@ -103,6 +106,7 @@ services:
       LOCO_SERIES: TE33A
       REPORTER_API_KEY: super-secret-key-change-me
       LOCO_NODE_CONFIG: /app/app/telemetry/node_config/te33a_diesel.yaml
+      MQTT_URL: mqtt://loco_mqtt:1883
     volumes:
       - .:/app
       - /app/.venv

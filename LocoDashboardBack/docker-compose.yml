@@ -1,4 +1,17 @@
 services:
+  mqtt:
+    image: emqx/emqx:5.8
+    container_name: loco_mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    environment:
+      EMQX_NODE_NAME: emqx@localhost
+    networks:
+      - default
+      - loco_shared
+
   db:
     image: postgres:16-alpine
     container_name: dashboard_back_db
@@ -29,12 +42,15 @@ services:
       JWT_SECRET: change-me-in-production
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: admin123
+      MQTT_URL: mqtt://loco_mqtt:1883
     volumes:
       - .:/app
       - /app/.venv
     depends_on:
       db:
         condition: service_healthy
+      mqtt:
+        condition: service_started
     networks:
       - default
       - loco_shared

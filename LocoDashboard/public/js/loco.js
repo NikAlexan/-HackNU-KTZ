@@ -305,6 +305,7 @@ async function fetchLoco() {
     if (!res.ok) throw new Error('HTTP ' + res.status);
 
     const data = await res.json();
+    _locoType = data.type;
     renderHeader(data);
     renderKpi(data);
     renderCompHealth(data.component_health, data.component_risks);
@@ -315,5 +316,99 @@ async function fetchLoco() {
   }
 }
 
-fetchLoco();
+let _locoType = null;
+
+async function fetchLocoAndInit() {
+  await fetchLoco();
+  if (_locoType) _connectLiveWS(_locoType);
+}
+
+fetchLocoAndInit();
 setInterval(fetchLoco, 5000);
+
+// ── live sensor panel (WebSocket /ws/loco/{id}) ───────────────────────────────
+
+const _SENSOR_META = {
+  electro: [
+    { key: 'speed',             label: 'Скорость',           unit: 'км/ч',   warn: () => false },
+    { key: 'catenary_v',        label: 'Напряжение КС',      unit: 'кВ',     warn: v => v < 23, crit: v => v < 20 },
+    { key: 'pantograph_current',label: 'Ток пантографа',     unit: 'А',      warn: v => v > 700, crit: v => v > 900 },
+    { key: 'td_currents_max',   label: 'Ток ТЭД макс',       unit: 'А',      warn: v => v > 550, crit: v => v > 650 },
+    { key: 'power_kw',          label: 'Мощность',            unit: 'кВт',    warn: () => false },
+    { key: 'regen_power',       label: 'Рекуперация',         unit: 'кВт',    warn: () => false },
+    { key: 'power_factor',      label: 'cos φ',               unit: '',       warn: () => false },
+    { key: 'transformer_temp',  label: 'Т трансформатора',   unit: '°C',     warn: v => v > 70, crit: v => v > 90 },
+    { key: 'compressor_temp',   label: 'Т компрессора',       unit: '°C',     warn: v => v > 60, crit: v => v > 85 },
+    { key: 'brake',             label: 'Давление тормоза',    unit: 'атм',    warn: v => v < 4.5, crit: v => v < 3.5 },
+    { key: 'brake_fill_rate',   label: 'Заполнение рез.',     unit: 'атм/с',  warn: v => v > 0.08 },
+  ],
+  diesel: [
+    { key: 'speed',             label: 'Скорость',            unit: 'км/ч',   warn: () => false },
+    { key: 'engine_rpm',        label: 'Обороты',             unit: 'об/мин', warn: () => false },
+    { key: 'oil_temp',          label: 'Т масла',             unit: '°C',     warn: v => v > 80, crit: v => v > 100 },
+    { key: 'coolant_temp',      label: 'Т охладителя',        unit: '°C',     warn: v => v > 80, crit: v => v > 95 },
+    { key: 'oil_pressure',      label: 'Давление масла',      unit: 'бар',    warn: v => v < 3.0, crit: v => v < 1.5 },
+    { key: 'fuel',              label: 'Топливо',             unit: 'л',      warn: v => v < 4000, crit: v => v < 300 },
+    { key: 'main_gen_v',        label: 'Генератор',           unit: 'В',      warn: () => false },
+    { key: 'traction_force',    label: 'Тяговое усилие',      unit: 'кН',     warn: () => false },
+    { key: 'compressor_temp',   label: 'Т компрессора',       unit: '°C',     warn: v => v > 60, crit: v => v > 85 },
+    { key: 'brake',             label: 'Давление тормоза',    unit: 'атм',    warn: v => v < 4.5, crit: v => v < 3.5 },
+    { key: 'brake_fill_rate',   label: 'Заполнение рез.',     unit: 'атм/с',  warn: v => v > 0.08 },
+  ],
+};
+
+function renderSensors(sensors, locoType) {
+  const panel = document.getElementById('sensor-panel');
+  if (!panel || !sensors) return;
+
+  const typeKey = locoType === 'ELECTRIC' ? 'electro' : 'diesel';
+  const meta = _SENSOR_META[typeKey] || [];
+
+  panel.innerHTML = meta.map(({ key, label, unit, warn, crit }) => {
+    const v = sensors[key];
+    if (v === undefined || v === null) return '';
+    const num = Number(v);
+    const isCrit = crit && crit(num);
+    const isWarn = !isCrit && warn && warn(num);
+    const cls = isCrit ? 's-crit' : isWarn ? 's-warn' : 's-ok';
+    const disp = Number.isInteger(num) ? num : num.toFixed(key === 'brake_fill_rate' ? 3 : 1);
+    return `<div class="sensor-row ${cls}">
+      <div class="sensor-label">${label}</div>
+      <div class="sensor-val">${disp}</div>
+      <div class="sensor-unit">${unit}</div>
+    </div>`;
+  }).join('');
+}
+
+function _connectLiveWS(locoType) {
+  const token = getToken();
+  if (!token || !locoId) return;
+
+  const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+  const host = DASHBOARD_API.replace(/^https?:\/\//, '');
+  const ws = new WebSocket(`${proto}://${host}/ws/loco/${encodeURIComponent(locoId)}?token=${token}`);
+
+  ws.onmessage = e => {
+    try {
+      const packet = JSON.parse(e.data);
+      renderSensors(packet.sensors, locoType);
+      const tsEl = document.getElementById('live-sensor-ts');
+      if (tsEl) tsEl.textContent = new Date().toLocaleTimeString('ru-RU');
+
+      const speedEl = document.getElementById('kpi-speed');
+      if (speedEl && packet.speed != null) {
+        speedEl.textContent = Number(packet.speed).toFixed(0);
+      }
+      const healthEl = document.getElementById('kpi-health');
+      if (healthEl && packet.health_index != null) {
+        healthEl.textContent = Number(packet.health_index).toFixed(0);
+        healthEl.className = 'kv ' + gradeColorClass(packet.health_grade);
+      }
+      setText('kpi-grade', 'оценка ' + (packet.health_grade || '—'));
+    } catch {}
+  };
+
+  ws.onerror = () => {};
+  ws.onclose = () => setTimeout(() => _connectLiveWS(locoType), 3000);
+}
+

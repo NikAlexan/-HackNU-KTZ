@@ -14,6 +14,7 @@ from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 from sqlalchemy import desc, select
 
 from app.database import AsyncSessionLocal
+from app import live_state
 from app.models import Locomotive, TelemetryAggregate
 from app.routers.auth import decode_token
 
@@ -22,9 +23,6 @@ logger = logging.getLogger(__name__)
 
 _INTERVAL_SEC = 3
 
-# ---------------------------------------------------------------------------
-# Broadcaster — shared state
-# ---------------------------------------------------------------------------
 
 _clients: set[WebSocket] = set()
 _broadcast_task: asyncio.Task | None = None
@@ -104,9 +102,6 @@ def _ensure_broadcaster() -> None:
         _broadcast_task = asyncio.create_task(_broadcaster())
 
 
-# ---------------------------------------------------------------------------
-# Endpoint
-# ---------------------------------------------------------------------------
 
 @router.websocket("/ws/locomotives")
 async def locomotives_stream(websocket: WebSocket) -> None:
@@ -140,3 +135,35 @@ async def locomotives_stream(websocket: WebSocket) -> None:
         pass
     finally:
         _clients.discard(websocket)
+
+
+@router.websocket("/ws/loco/{loco_id}")
+async def loco_live_stream(websocket: WebSocket, loco_id: str) -> None:
+    token = websocket.query_params.get("token")
+    if not token:
+        await websocket.close(code=4001)
+        return
+    try:
+        decode_token(token)
+    except Exception:
+        await websocket.close(code=4001)
+        return
+
+    await websocket.accept()
+    live_state.add_client(loco_id, websocket)
+
+    current = live_state.get(loco_id)
+    if current:
+        try:
+            await websocket.send_text(json.dumps(current, default=str))
+        except Exception:
+            live_state.remove_client(loco_id, websocket)
+            return
+
+    try:
+        while True:
+            await websocket.receive_text()
+    except WebSocketDisconnect:
+        pass
+    finally:
+        live_state.remove_client(loco_id, websocket)

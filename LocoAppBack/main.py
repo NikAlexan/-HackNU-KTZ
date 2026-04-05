@@ -4,12 +4,11 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.config import REPORTER_API_KEY
 from app.database import engine
 import app.models  # noqa: F401 — registers models on Base.metadata
 from app.generator import run_generator
+from app.mqtt_publisher import run_mqtt_publisher
 from app.register import register_in_dashboard
-from app.reporter import run_reporter
 from app.routers.maintenance import router as maintenance_router
 from app.routers.ws import router as ws_router
 
@@ -20,10 +19,10 @@ DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:9000")
 async def lifespan(app: FastAPI):
     await register_in_dashboard(DASHBOARD_URL)
     gen_task = asyncio.create_task(run_generator())
-    rep_task = asyncio.create_task(run_reporter(DASHBOARD_URL, REPORTER_API_KEY))
+    pub_task = asyncio.create_task(run_mqtt_publisher())
     yield
     gen_task.cancel()
-    rep_task.cancel()
+    pub_task.cancel()
     await engine.dispose()
 
 

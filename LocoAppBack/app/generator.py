@@ -17,9 +17,8 @@ import random
 from datetime import datetime, timezone
 
 from app.config import LOCO_ID, LOCO_NODE_CONFIG, LOCO_SERIES, LOCO_TYPE
-from app.database import AsyncSessionLocal
-from app.models import GeneratedReading
-from app.telemetry.health import FLUSH_EVERY, ComponentHealthTracker, calc_health_from_config
+from app.database import AsyncSessionLocal  # used by ComponentHealthTracker.load
+from app.telemetry.health import ComponentHealthTracker, calc_health_from_config
 from app.telemetry.node_config import load_node_config
 from app.telemetry.packet import build_packet
 from app.telemetry.sensors_extract import extract_sensors
@@ -79,25 +78,6 @@ async def run_generator() -> None:
             health_index, health_grade, component_snap, component_risks,
         )
         latest_packet = packet
-
-        # 6. Persist reading + periodic health flush
-        async with AsyncSessionLocal() as session:
-            session.add(GeneratedReading(
-                loco_id=LOCO_ID,
-                loco_type=LOCO_TYPE,
-                ts=now,
-                speed_kmh=state["speed"],
-                traction_mode=state["traction_mode"],
-                health_index=health_index,
-                health_grade=health_grade,
-                error_code=state.get("error_code"),
-                sensors_json=sensors,
-                component_risks_json=component_risks,
-            ))
-            await session.commit()
-
-            if step % FLUSH_EVERY == 0:
-                await tracker.flush(session)
 
         step += 1
         await asyncio.sleep(dt_sec)
