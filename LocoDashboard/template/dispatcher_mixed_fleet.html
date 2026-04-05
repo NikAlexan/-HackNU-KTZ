@@ -1,0 +1,311 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f4f0;--bg2:#fff;--bg3:#f0efe9;--bg4:#e8e7e0;
+  --brd:#d8d6cc;--brd2:#c8c6bb;
+  --t1:#1a1a18;--t2:#6b6960;--t3:#9a9890;
+  --blue:#1a5fa8;--bl-l:#e6f0fa;
+  --pur:#5b21b6;--pur-l:#ede9fe;--pur-m:#8b5cf6;
+  --grn:#2d7a3a;--grn-l:#eaf3de;--grn-m:#4ade80;
+  --amb:#7a4d10;--amb-l:#faeeda;--amb-m:#f59e0b;
+  --red:#8a1f1f;--red-l:#fcebeb;--red-m:#ef4444;
+  --teal:#0e7490;--teal-l:#e0f7fa;
+}
+body{background:var(--bg);font-family:'Rajdhani',sans-serif;font-size:13px;color:var(--t1)}
+.wrap{min-height:100vh;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:9px 18px;background:var(--bg2);border-bottom:1px solid var(--brd)}
+.title{font-size:15px;font-weight:700}
+.sub{font-size:10px;color:var(--t2);margin-top:1px}
+.live{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--grn)}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--grn-m);animation:p 1.4s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.2}}
+.kpi-row{display:flex;border-bottom:1px solid var(--brd);background:var(--bg2)}
+.kpi{flex:1;padding:9px 14px;border-right:1px solid var(--brd);display:flex;align-items:center;gap:9px}
+.kpi:last-child{border-right:none}
+.kpi-ico{width:30px;height:30px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.kv{font-size:22px;font-weight:700;line-height:1;font-family:'JetBrains Mono',monospace}
+.kl{font-size:9px;color:var(--t2);letter-spacing:1px;text-transform:uppercase;margin-top:1px}
+.ks{font-size:9px;margin-top:1px}
+.body{display:grid;grid-template-columns:1fr 320px;flex:1}
+.fleet{padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto}
+.sec-title{font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;font-family:'JetBrains Mono',monospace;margin-bottom:2px;display:flex;align-items:center;gap:8px}
+.loco-card{background:var(--bg2);border:1px solid var(--brd);border-radius:8px;padding:9px 11px;cursor:pointer;transition:border-color .15s}
+.loco-card:hover{border-color:var(--blue)}
+.loco-card.el{border-left:3px solid var(--pur-m)}
+.loco-card.di{border-left:3px solid var(--amb-m)}
+.loco-card.alert{background:var(--red-l);border-color:rgba(239,68,68,.3)}
+.loco-card.warn{background:var(--amb-l)}
+.head{display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.lid{font-size:13px;font-weight:700}
+.ltype{font-size:9px;padding:2px 6px;border-radius:3px;font-weight:600;letter-spacing:.5px}
+.el-tag{background:var(--pur-l);color:var(--pur)}
+.di-tag{background:var(--amb-l);color:var(--amb)}
+.route{font-size:10px;color:var(--t2)}
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:3px;font-size:9px;font-weight:600;margin-left:auto}
+.b-ok{background:var(--grn-l);color:var(--grn)}
+.b-warn{background:var(--amb-l);color:var(--amb)}
+.b-crit{background:var(--red-l);color:var(--red)}
+.b-blue{background:var(--bl-l);color:var(--blue)}
+.metrics{display:grid;grid-template-columns:repeat(6,1fr);gap:5px}
+.mm{background:var(--bg3);border-radius:4px;padding:4px 5px;text-align:center}
+.mv{font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;line-height:1.2}
+.ml{font-size:8px;color:var(--t2);text-transform:uppercase;letter-spacing:.4px;margin-top:1px}
+.hb{height:2px;background:var(--bg4);border-radius:1px;margin-top:2px}
+.hf{height:100%;border-radius:1px}
+.vg{color:var(--grn)}.vy{color:var(--amb)}.vr{color:var(--red)}.vb{color:var(--blue)}.vp{color:var(--pur)}
+.fg{background:var(--grn-m)}.fy{background:var(--amb-m)}.fr{background:var(--red-m)}.fb{background:var(--blue)}.fp{background:var(--pur-m)}
+
+/* SIDEBAR */
+.sidebar{border-left:1px solid var(--brd);background:var(--bg2);display:flex;flex-direction:column}
+.tabs{display:flex;border-bottom:1px solid var(--brd)}
+.tab{flex:1;padding:8px;text-align:center;font-size:10px;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.sc{flex:1;padding:12px;overflow:auto}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:.5px solid var(--brd)}
+.detail-row:last-child{border:none}
+.dl{font-size:10px;color:var(--t2)}
+.dv{font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.ev{display:flex;flex-direction:column;gap:5px}
+.ei{display:flex;align-items:start;gap:7px;padding:7px;border-radius:5px;border:.5px solid var(--brd);font-size:10px;line-height:1.4}
+.ei.ok{background:var(--grn-l);border-color:rgba(74,222,128,.3)}
+.ei.warn{background:var(--amb-l);border-color:rgba(245,158,11,.3)}
+.ei.crit{background:var(--red-l);border-color:rgba(239,68,68,.3)}
+.ed{width:5px;height:5px;border-radius:50%;margin-top:3px;flex-shrink:0}
+.dok{background:var(--grn-m)}.dw{background:var(--amb-m)}.dr{background:var(--red-m)}
+.et{flex:1}.etm{font-size:9px;color:var(--t3);font-family:'JetBrains Mono',monospace;margin-top:1px}
+.energy-compare{margin-top:8px}
+.ec-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:10px}
+.ec-name{width:80px;color:var(--t2)}
+.ec-bar{flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.ec-fill{height:100%;border-radius:3px}
+.ec-val{width:45px;text-align:right;font-weight:600;font-family:'JetBrains Mono',monospace}
+.footer{padding:7px 18px;background:var(--bg2);border-top:.5px solid var(--brd);display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--t2)}
+</style>
+
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="title">Диспетчерский центр — Смешанный флот</div>
+      <div class="sub">Электровозы + Тепловозы · Направление Нур-Султан → Петропавловск</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="live"><div class="dot"></div><span id="clk">—</span></div>
+      <div style="font-size:10px;color:var(--t2)">Смена: Сейтова К.Б.</div>
+    </div>
+  </div>
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--pur-l);color:var(--pur)">⚡</div>
+      <div><div class="kv" style="color:var(--pur)">7</div><div class="kl">Электровозов</div><div class="ks" style="color:var(--grn)">6 в движении</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--amb-l);color:var(--amb)">🚂</div>
+      <div><div class="kv" style="color:var(--amb)">5</div><div class="kl">Тепловозов</div><div class="ks" style="color:var(--grn)">5 в движении</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--red-l);color:var(--red)">⚠</div>
+      <div><div class="kv" style="color:var(--red)">3</div><div class="kl">Алертов</div><div class="ks" style="color:var(--red)">2 крит · 1 предупр.</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--grn-l)">✓</div>
+      <div><div class="kv" style="color:var(--grn)">91</div><div class="kl">Ср. индекс</div><div class="ks" style="color:var(--grn)">+3 vs вчера</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--teal-l);color:var(--teal)">♻</div>
+      <div><div class="kv" style="color:var(--teal)">14.2</div><div class="kl">МВт·ч рекупер.</div><div class="ks" style="color:var(--teal)">сегодня сэкономлено</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--bg3)">📡</div>
+      <div><div class="kv">2840</div><div class="kl">Событий / мин</div><div class="ks" style="color:var(--t2)">телеметрия норма</div></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="fleet">
+      <div class="sec-title">
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--pur-m);display:inline-block"></span>
+        Электровозы — 25 кВ AC
+      </div>
+
+      <div class="loco-card el">
+        <div class="head">
+          <span class="lid" style="color:var(--pur)">ЭП2К №0184</span>
+          <span class="ltype el-tag">ЭЛЕКТРО</span>
+          <span class="route">Нур-Султан → Кокшетау &nbsp;168/305 км</span>
+          <span class="badge b-ok">НОРМА</span>
+        </div>
+        <div class="metrics">
+          <div class="mm"><div class="mv vb">104</div><div class="ml">км/ч</div><div class="hb"><div class="hf fb" style="width:86%"></div></div></div>
+          <div class="mm"><div class="mv vp">24.8кВ</div><div class="ml">сеть</div><div class="hb"><div class="hf fp" style="width:82%"></div></div></div>
+          <div class="mm"><div class="mv vp">680А</div><div class="ml">ток</div><div class="hb"><div class="hf fp" style="width:68%"></div></div></div>
+          <div class="mm"><div class="mv vg">2.4МВт</div><div class="ml">рекуп.</div><div class="hb"><div class="hf fg" style="width:48%"></div></div></div>
+          <div class="mm"><div class="mv vy">82°</div><div class="ml">тд4</div><div class="hb"><div class="hf fy" style="width:82%"></div></div></div>
+          <div class="mm"><div class="mv vg" style="font-size:11px">95/A</div><div class="ml">индекс</div><div class="hb"><div class="hf fg" style="width:95%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="loco-card el alert">
+        <div class="head">
+          <span class="lid" style="color:var(--pur)">ЭП1М №0441</span>
+          <span class="ltype el-tag">ЭЛЕКТРО</span>
+          <span class="route">Кокшетау → Петропавловск &nbsp;58/160 км</span>
+          <span class="badge b-crit">АЛЕРТ</span>
+        </div>
+        <div class="metrics">
+          <div class="mm"><div class="mv vb">87</div><div class="ml">км/ч</div><div class="hb"><div class="hf fb" style="width:72%"></div></div></div>
+          <div class="mm"><div class="mv vy">23.1кВ</div><div class="ml">сеть ↓</div><div class="hb"><div class="hf fy" style="width:61%"></div></div></div>
+          <div class="mm"><div class="mv vr">820А</div><div class="ml">ток ↑</div><div class="hb"><div class="hf fr" style="width:92%"></div></div></div>
+          <div class="mm"><div class="mv vg">1.1МВт</div><div class="ml">рекуп.</div><div class="hb"><div class="hf fg" style="width:22%"></div></div></div>
+          <div class="mm"><div class="mv vr">96°</div><div class="ml">тр-р ↑</div><div class="hb"><div class="hf fr" style="width:96%"></div></div></div>
+          <div class="mm"><div class="mv vy" style="font-size:11px">74/C</div><div class="ml">индекс</div><div class="hb"><div class="hf fy" style="width:74%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="loco-card el">
+        <div class="head">
+          <span class="lid" style="color:var(--pur)">ЧС2Т №1188</span>
+          <span class="ltype el-tag">ЭЛЕКТРО</span>
+          <span class="route">Нур-Султан → Петропавловск &nbsp;221/305 км</span>
+          <span class="badge b-ok">НОРМА</span>
+        </div>
+        <div class="metrics">
+          <div class="mm"><div class="mv vb">118</div><div class="ml">км/ч</div><div class="hb"><div class="hf fb" style="width:98%"></div></div></div>
+          <div class="mm"><div class="mv vp">25.2кВ</div><div class="ml">сеть</div><div class="hb"><div class="hf fp" style="width:84%"></div></div></div>
+          <div class="mm"><div class="mv vp">590А</div><div class="ml">ток</div><div class="hb"><div class="hf fp" style="width:59%"></div></div></div>
+          <div class="mm"><div class="mv vg">3.1МВт</div><div class="ml">рекуп.</div><div class="hb"><div class="hf fg" style="width:62%"></div></div></div>
+          <div class="mm"><div class="mv vg">68°</div><div class="ml">тр-р</div><div class="hb"><div class="hf fg" style="width:68%"></div></div></div>
+          <div class="mm"><div class="mv vg" style="font-size:11px">97/A</div><div class="ml">индекс</div><div class="hb"><div class="hf fg" style="width:97%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="sec-title" style="margin-top:4px">
+        <span style="width:10px;height:10px;border-radius:2px;background:var(--amb-m);display:inline-block"></span>
+        Тепловозы — Дизель
+      </div>
+
+      <div class="loco-card di warn">
+        <div class="head">
+          <span class="lid" style="color:var(--amb)">ТЭП70 №2847</span>
+          <span class="ltype di-tag">ДИЗЕЛЬ</span>
+          <span class="route">Нур-Султан → Кокшетау &nbsp;142/305 км</span>
+          <span class="badge b-warn">ВНИМАНИЕ</span>
+        </div>
+        <div class="metrics">
+          <div class="mm"><div class="mv vb">87</div><div class="ml">км/ч</div><div class="hb"><div class="hf fb" style="width:72%"></div></div></div>
+          <div class="mm"><div class="mv vy">78°</div><div class="ml">т.масла</div><div class="hb"><div class="hf fy" style="width:78%"></div></div></div>
+          <div class="mm"><div class="mv vy">47%</div><div class="ml">топливо</div><div class="hb"><div class="hf fy" style="width:47%"></div></div></div>
+          <div class="mm"><div class="mv vg">5.2</div><div class="ml">торм.атм</div><div class="hb"><div class="hf fg" style="width:72%"></div></div></div>
+          <div class="mm"><div class="mv vb">184кН</div><div class="ml">тяга</div><div class="hb"><div class="hf fb" style="width:61%"></div></div></div>
+          <div class="mm"><div class="mv vy" style="font-size:11px">92/A</div><div class="ml">индекс</div><div class="hb"><div class="hf fg" style="width:92%"></div></div></div>
+        </div>
+      </div>
+
+      <div class="loco-card di alert">
+        <div class="head">
+          <span class="lid" style="color:var(--amb)">2ТЭ10 №1203</span>
+          <span class="ltype di-tag">ДИЗЕЛЬ</span>
+          <span class="route">Кокшетау → Петропавловск &nbsp;88/160 км</span>
+          <span class="badge b-crit">АЛЕРТ</span>
+        </div>
+        <div class="metrics">
+          <div class="mm"><div class="mv vb">74</div><div class="ml">км/ч</div><div class="hb"><div class="hf fb" style="width:62%"></div></div></div>
+          <div class="mm"><div class="mv vr">94°</div><div class="ml">т.масла ↑</div><div class="hb"><div class="hf fr" style="width:94%"></div></div></div>
+          <div class="mm"><div class="mv vg">61%</div><div class="ml">топливо</div><div class="hb"><div class="hf fg" style="width:61%"></div></div></div>
+          <div class="mm"><div class="mv vg">5.0</div><div class="ml">торм.атм</div><div class="hb"><div class="hf fg" style="width:69%"></div></div></div>
+          <div class="mm"><div class="mv vb">162кН</div><div class="ml">тяга</div><div class="hb"><div class="hf fb" style="width:54%"></div></div></div>
+          <div class="mm"><div class="mv vy" style="font-size:11px">71/C</div><div class="ml">индекс</div><div class="hb"><div class="hf fy" style="width:71%"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="tabs">
+        <div class="tab on" onclick="showTab(this,'events')">События</div>
+        <div class="tab" onclick="showTab(this,'energy')">Энергия</div>
+        <div class="tab" onclick="showTab(this,'detail')">Детали</div>
+      </div>
+
+      <div class="sc" id="t-events">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Журнал событий</div>
+        <div class="ev">
+          <div class="ei crit"><div class="ed dr"></div><div class="et"><strong>ЭП1М №0441</strong> — Т трансформатора 96°C, порог 90°C. Рекомендуется снизить нагрузку.<div class="etm">13:02:11</div></div></div>
+          <div class="ei crit"><div class="ed dr"></div><div class="et"><strong>№0441</strong> — Напряжение сети 23.1 кВ (ниже нормы), ток 820А↑<div class="etm">13:01:54</div></div></div>
+          <div class="ei warn"><div class="ed dw"></div><div class="et"><strong>ТЭП70 №2847</strong> — Т масла 78°C, тренд +3°/10мин<div class="etm">12:58:30</div></div></div>
+          <div class="ei warn"><div class="ed dw"></div><div class="et"><strong>№2847</strong> — Топливо 47%, запланировать заправку в Кокшетау<div class="etm">12:55:12</div></div></div>
+          <div class="ei warn"><div class="ed dw"></div><div class="et"><strong>ЭП2К №0184</strong> — ТД4 ток +5% выше среднего, Т обмотки 82°C<div class="etm">12:51:08</div></div></div>
+          <div class="ei ok"><div class="ed dok"></div><div class="et"><strong>ЧС2Т №1188</strong> — Рекуперация 3.1 МВт, индекс 97/A<div class="etm">12:48:44</div></div></div>
+          <div class="ei ok"><div class="ed dok"></div><div class="et"><strong>2ТЭ10 №1203</strong> — Снижение тяги до П-6, температура стабилизируется<div class="etm">12:45:02</div></div></div>
+        </div>
+      </div>
+
+      <div class="sc" id="t-energy" style="display:none">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:10px">Сравнение: электро vs дизель</div>
+        <div style="position:relative;height:150px;margin-bottom:12px"><canvas id="typeChart"></canvas></div>
+        <div style="display:flex;gap:12px;font-size:10px;margin-bottom:14px">
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:3px;background:var(--pur-m);display:inline-block;border-radius:1px"></span>Электро</span>
+          <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:3px;background:var(--amb-m);display:inline-block;border-radius:1px"></span>Дизель</span>
+        </div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Рекуперация сегодня</div>
+        <div class="energy-compare">
+          <div class="ec-row"><span class="ec-name" style="color:var(--pur)">ЭП2К №0184</span><div class="ec-bar"><div class="ec-fill" style="width:77%;background:var(--pur-m)"></div></div><span class="ec-val vp">+184 кВт</span></div>
+          <div class="ec-row"><span class="ec-name" style="color:var(--pur)">ЧС2Т №1188</span><div class="ec-bar"><div class="ec-fill" style="width:100%;background:var(--pur-m)"></div></div><span class="ec-val vp">+241 кВт</span></div>
+          <div class="ec-row"><span class="ec-name" style="color:var(--pur)">ЭП1М №0441</span><div class="ec-bar"><div class="ec-fill" style="width:38%;background:var(--amb-m)"></div></div><span class="ec-val vy">+91 кВт</span></div>
+          <div style="margin-top:8px;padding:6px 8px;background:var(--teal-l);border-radius:4px;font-size:10px;color:var(--teal)">
+            ♻ Итого сегодня: <strong>14.2 МВт·ч</strong> — экономия ~180 000 ₸
+          </div>
+        </div>
+      </div>
+
+      <div class="sc" id="t-detail" style="display:none">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:8px">ЭП1М №0441 — Критический алерт</div>
+        <div class="detail-row"><span class="dl">Тип</span><span class="dv" style="color:var(--pur)">Электровоз 25 кВ AC</span></div>
+        <div class="detail-row"><span class="dl">Скорость</span><span class="dv vb">87 км/ч</span></div>
+        <div class="detail-row"><span class="dl">Напряжение сети</span><span class="dv vy">23.1 кВ ↓</span></div>
+        <div class="detail-row"><span class="dl">Ток пантографа</span><span class="dv vr">820 А ↑</span></div>
+        <div class="detail-row"><span class="dl">Т трансформатора</span><span class="dv vr">96 °C ↑</span></div>
+        <div class="detail-row"><span class="dl">Рекуперация</span><span class="dv">1.1 МВт</span></div>
+        <div class="detail-row"><span class="dl">cos φ</span><span class="dv">0.86 ↓</span></div>
+        <div class="detail-row"><span class="dl">Позиция КМ</span><span class="dv">П-10</span></div>
+        <div class="detail-row"><span class="dl">Охлаждение</span><span class="dv vr">ПЕРЕГРУЗКА</span></div>
+        <div class="detail-row"><span class="dl">Тормоза ЭПТ</span><span class="dv vg">НОРМА</span></div>
+        <div class="detail-row"><span class="dl">Пройдено</span><span class="dv">58 / 160 км</span></div>
+        <div class="detail-row"><span class="dl">Индекс здоровья</span><span class="dv vy">74 / C</span></div>
+        <div style="margin-top:10px;padding:7px;background:var(--red-l);border-radius:5px;font-size:10px;color:var(--red);border:.5px solid rgba(239,68,68,.25)">
+          ⚠ Рекомендация: снизить нагрузку до П-7, проверить вентиляцию трансформатора на ближайшей остановке.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>АРМ ДИСПЕТЧЕРА v2.4 · КЗ-ППГУПС</span>
+    <span id="fstat">Активных соединений: 12 | Задержка: 38мс | SSE: ОК</span>
+    <span id="fclk">—</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+function tick(){const t=new Date().toLocaleTimeString('ru-RU');['clk','fclk'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=t;});}
+tick();setInterval(tick,1000);
+function showTab(el,name){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  ['events','energy','detail'].forEach(id=>{
+    const p=document.getElementById('t-'+id);
+    if(p)p.style.display=id===name?'block':'none';
+  });
+}
+const lbl=['08:00','09:00','10:00','11:00','12:00','13:00'];
+const elIdx=[90,91,91,92,93,92];
+const diIdx=[86,87,87,86,87,85];
+const c=document.getElementById('typeChart');
+if(c){new Chart(c,{type:'line',data:{labels:lbl,datasets:[
+  {data:elIdx,borderColor:'#8b5cf6',borderWidth:2,pointRadius:3,pointBackgroundColor:'#8b5cf6',tension:.3,fill:true,backgroundColor:'rgba(139,92,246,0.07)'},
+  {data:diIdx,borderColor:'#f59e0b',borderWidth:2,pointRadius:3,pointBackgroundColor:'#f59e0b',tension:.3,fill:true,backgroundColor:'rgba(245,158,11,0.07)'}
+]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}},
+scales:{x:{ticks:{color:'#9a9890',font:{size:8}},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}},
+y:{min:70,max:100,ticks:{color:'#9a9890',font:{size:8},stepSize:10},grid:{color:'rgba(0,0,0,0.04)'},border:{display:false}}},animation:{duration:0}}});}
+</script>

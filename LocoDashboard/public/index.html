@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Диспетчерский центр — Парк локомотивов</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <div class="title">Диспетчерский центр — Парк локомотивов</div>
+      <div class="sub" id="sub">Подключение к серверу...</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="live"><div class="dot"></div><span id="clk">—</span></div>
+      <span class="ws-status" id="ws-status"></span>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--pur-l);color:var(--pur)">⚡</div>
+      <div><div class="kv" style="color:var(--pur)" id="kpi-electro">—</div><div class="kl">Электровозов</div><div class="ks" id="kpi-electro-motion" style="color:var(--t3)">—</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--amb-l);color:var(--amb)">🚂</div>
+      <div><div class="kv" style="color:var(--amb)" id="kpi-diesel">—</div><div class="kl">Тепловозов</div><div class="ks" id="kpi-diesel-motion" style="color:var(--t3)">—</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--red-l);color:var(--red)">⚠</div>
+      <div><div class="kv" style="color:var(--red)" id="kpi-alerts">—</div><div class="kl">Алертов</div><div class="ks" id="kpi-alerts-sub" style="color:var(--t3)">—</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--grn-l)">✓</div>
+      <div><div class="kv" style="color:var(--grn)" id="kpi-health">—</div><div class="kl">Ср. индекс</div><div class="ks" id="kpi-health-sub" style="color:var(--t3)">—</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--bg3)">📡</div>
+      <div><div class="kv" id="kpi-total">—</div><div class="kl">Локомотивов</div><div class="ks" id="kpi-motion" style="color:var(--t3)">—</div></div>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="fleet" id="fleet">
+      <div class="empty-state">
+        <div class="icon">📡</div>
+        <div class="msg">Ожидание данных...</div>
+      </div>
+    </div>
+
+    <div class="sidebar">
+      <div class="tabs">
+        <div class="tab on" onclick="showTab(this,'log')">Журнал</div>
+        <div class="tab" onclick="showTab(this,'stats')">Статистика</div>
+      </div>
+      <div class="sc" id="t-log">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Последние обновления</div>
+        <div class="ev" id="event-log"></div>
+      </div>
+      <div class="sc" id="t-stats" style="display:none">
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:8px">Распределение по здоровью</div>
+        <div style="position:relative;height:150px;margin-bottom:12px"><canvas id="healthChart"></canvas></div>
+        <div style="font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;margin-bottom:8px;margin-top:8px">Статусы</div>
+        <div id="status-summary" style="font-size:11px;font-family:'JetBrains Mono',monospace"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>АРМ ДИСПЕТЧЕРА v3.0 · LocoDashboard</span>
+    <span id="fstat">Ожидание WS...</span>
+    <span id="fclk">—</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="/js/fleet.js"></script>
+</body>
+</html>

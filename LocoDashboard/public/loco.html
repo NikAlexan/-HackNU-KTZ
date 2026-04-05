@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Локомотив — LocoDashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:12px">
+      <a class="back-btn" href="/">← Парк</a>
+      <div>
+        <div class="title" id="loco-title">Загрузка...</div>
+        <div class="sub" id="loco-sub">—</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <div class="live"><div class="dot"></div><span id="clk">—</span></div>
+      <span id="loco-badge" class="badge">—</span>
+    </div>
+  </div>
+
+  <div class="kpi-row" id="kpi-row">
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--bl-l);color:var(--blue)">⚡</div>
+      <div><div class="kv vb" id="kpi-speed">—</div><div class="kl">км/ч (ср.)</div><div class="ks" style="color:var(--t3)">последний агрегат</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--red-l);color:var(--red)">🌡</div>
+      <div><div class="kv" id="kpi-temp">—</div><div class="kl" id="kpi-temp-lbl">Температура °C</div><div class="ks" style="color:var(--t3)">макс. за мин.</div></div>
+    </div>
+    <div class="kpi" id="kpi-elec-block">
+      <div class="kpi-ico" style="background:var(--pur-l);color:var(--pur)">⚡</div>
+      <div><div class="kv vp" id="kpi-voltage">—</div><div class="kl">кВ КС (мин.)</div><div class="ks" style="color:var(--t3)">контактная сеть</div></div>
+    </div>
+    <div class="kpi" id="kpi-diesel-block" style="display:none">
+      <div class="kpi-ico" style="background:var(--amb-l);color:var(--amb)">⛽</div>
+      <div><div class="kv vy" id="kpi-fuel">—</div><div class="kl">Топливо л</div><div class="ks" style="color:var(--t3)">последнее значение</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--grn-l);color:var(--grn)">♥</div>
+      <div><div class="kv" id="kpi-health">—</div><div class="kl">Индекс здоровья</div><div class="ks" style="color:var(--t3)" id="kpi-grade">оценка —</div></div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-ico" style="background:var(--red-l);color:var(--red)">⚠</div>
+      <div><div class="kv" id="kpi-errors">—</div><div class="kl">Ошибок</div><div class="ks" style="color:var(--t3)">за последнюю мин.</div></div>
+    </div>
+  </div>
+
+  <div class="loco-detail-body">
+    <div class="section">
+      <div class="section-title">Индекс здоровья — последние 12 агрегатов</div>
+      <div class="chart-wrap"><canvas id="healthChart"></canvas></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">История агрегатов (1-минутные интервалы)</div>
+      <table class="agg-table" id="agg-table">
+        <thead>
+          <tr>
+            <th>Время</th>
+            <th>Скорость</th>
+            <th>Темп.</th>
+            <th>Напр./Топл.</th>
+            <th>Индекс</th>
+            <th>Оценка</th>
+            <th>Ошибки</th>
+          </tr>
+        </thead>
+        <tbody id="agg-tbody">
+          <tr><td colspan="7" style="text-align:center;color:var(--t3);padding:20px">Загрузка данных...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">
+    <span>АРМ ДИСПЕТЧЕРА v3.0 · Детали локомотива</span>
+    <span id="fstat">—</span>
+    <span id="fclk">—</span>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="/js/loco.js"></script>
+</body>
+</html>
