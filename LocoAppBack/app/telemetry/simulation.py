@@ -109,6 +109,7 @@ def init_state(loco_type: str) -> dict:
             "oil_temp": 62.0,
             "coolant_temp": 60.0,
             "oil_pressure": 5.5,
+            "boost_pressure": 1.0,
             "main_gen_v": 540.0,
             "traction_force": 0.0,
             "axle_loads": [18.0, 18.0, 18.0, 18.0],
@@ -184,7 +185,9 @@ def evolve_state(
         target_speed, traction_mode = 0.0, "IDLE"
         km_position = 120
 
-    s["speed"] = max(0.0, target_speed + _gauss(0, 1.5))
+    prev_speed = state.get("speed", 0.0)
+    alpha = 0.25  # EMA: ~2s smoothing at 500ms ticks
+    s["speed"] = round(max(0.0, prev_speed + alpha * (target_speed - prev_speed) + _gauss(0, 0.5)), 1)
 
     # Brake pressure
     if traction_mode == "BRAKE":
@@ -265,6 +268,14 @@ def evolve_state(
         s["coolant_temp"] = round(max(50.0, min(110.0, state["coolant_temp"] + dT_cool + _gauss(0, 0.05))), 1)
 
         s["oil_pressure"] = round(max(1.5, min(8.0, 5.5 + _gauss(0, 0.1))), 2)
+
+        # Турбонаддув: давление растёт от 1.0 (х.х.) до 2.6 бар (макс. нагрузка)
+        target_boost = 1.0 + speed_factor * 1.6
+        if scenario == "OVERHEAT" and t_sec >= 1800:
+            target_boost -= 0.4   # засорение фильтра → падение наддува
+        boost = state["boost_pressure"] + (target_boost - state["boost_pressure"]) * 0.05 + _gauss(0, 0.03)
+        s["boost_pressure"] = round(max(0.5, min(3.8, boost)), 3)
+
         s["main_gen_v"] = round(480 + speed_factor * 120 + _gauss(0, 5), 1)
         s["traction_force"] = round(max(0.0, speed_factor * 280 + _gauss(0, 5)), 1)
 

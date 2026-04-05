@@ -1,65 +1,145 @@
-# Node health configuration for KZ8A electric locomotive
+# Node health configuration for KZ8A electric locomotive (Alstom Prima T8)
 #
-# damage_rate: health points lost per second at risk_level = 1.0
-#   100 / 0.02 = 5000 sec ≈ 83 min at max continuous risk → health = 0
-#   100 / 0.00347 ≈ 28 820 sec ≈ 8 hours at max continuous risk → health = 0
+# Based on operational limits from docs/analys.md.
 #
-# exponent: controls how fast risk grows with deviation from norm
-#   1.0 — linear (equal damage at every step beyond warn)
-#   2.0 — quadratic: slow damage near warn, accelerating toward crit
-#   3.0 — cubic: even more pronounced, only severe deviations cause real damage
+# Per-component damage_rate (health points lost per second at risk=1.0):
+#   🔴 очень быстрый  → 0.05  (full degradation in ~33 min at max risk)
+#   🔴 быстрый        → 0.03  (~55 min)
+#   🟡 умеренный      → 0.015 (~111 min)
+#   🟢 медленный      → 0.005 (~330 min)
+#
+# weight: contribution of this component to the overall health_index.
+# aggregation: how multiple sensor risks are combined for one component.
+#   max      — component risk = worst individual sensor (default, safe choice)
+#   mean     — arithmetic mean
+#   weighted — per-sensor weight field
 
+# Global fallback damage_rate (used if component does not specify its own)
 damage_rate: 0.02
 
 norms:
-  power_nominal_kw: 5520   # Rated traction power of the KZ8A model (kW)
+  power_nominal_kw: 8800   # Rated traction power of the KZ8A model (kW)
 
 components:
+
+  # ── Тяговый трансформатор ────────────────────────────────────────────────
+  # Цепь 1: U↓ → I↑ → T↑ → деградация изоляции (правило Монтзингера: -50% ресурса на +10°C)
   transformer:
     label: "Трансформатор"
-    state_key: transformer_temp
-    risk_type: linear_hi     # risk grows above warn threshold
-    warn: 70                 # °C — risk starts
-    crit: 95                 # °C — risk = 1.0
-    exponent: 2.5            # slow growth near 70°C, sharp above ~85°C
+    weight: 1.5
+    damage_rate: 0.05   # 🔴 очень быстрый
+    aggregation: max
+    sensors:
+      - key: transformer_temp
+        risk_type: linear_hi
+        warn: 85          # °C — начало деградации изоляции класса H/F
+        crit: 95          # °C — risk=1.0
+        exponent: 2.5     # медленный рост вблизи 85°C, резкий после ~90°C
+      - key: pantograph_current
+        risk_type: linear_hi
+        warn: 750         # А — по analys.md: 750–850 А = предупреждение
+        crit: 900         # А — > 900 А = критично
+        exponent: 2.0
 
+  # ── Тяговые электродвигатели (8 осей) ───────────────────────────────────
   traction_drives:
     label: "Тяговые электродвигатели"
-    state_key: td_currents_max   # tracker resolves max(state["td_currents"])
-    risk_type: linear_hi
-    warn: 550                # A — risk starts
-    crit: 650                # A — risk = 1.0
-    exponent: 3.0            # near 550A almost no damage; near 650A — rapid wear
+    weight: 1.2
+    damage_rate: 0.03   # 🔴 быстрый — нагрев обмоток, IGBT-стресс
+    aggregation: max
+    sensors:
+      - key: td_currents_max
+        risk_type: linear_hi
+        warn: 500         # А — по analys.md (ранее 550, скорректировано)
+        crit: 600         # А — risk=1.0
+        exponent: 3.0     # только перегрузка даёт реальный износ
 
+  # ── Контактная сеть ──────────────────────────────────────────────────────
+  # Нормальный диапазон KZ8A: 22–27 кВ. Риск при выходе за пределы.
   catenary_system:
     label: "Контактная сеть"
-    state_key: catenary_v
-    risk_type: linear_lo     # risk grows BELOW warn (25 kV nominal — only undervoltage is dangerous)
-    warn: 23                 # kV — risk starts when voltage drops below this
-    crit: 20                 # kV — risk = 1.0
-    exponent: 2.0            # moderate voltage dips cause slow wear; deep sag causes rapid damage
+    weight: 1.0
+    damage_rate: 0.03
+    aggregation: max
+    sensors:
+      - key: catenary_v
+        risk_type: band_outside
+        ok_lo: 21.0       # кВ — нижняя граница нормы (analys.md warn < 21 кВ)
+        ok_hi: 27.5       # кВ — верхняя граница нормы
+        crit_lo: 19.0     # кВ — crit < 19 кВ
+        crit_hi: 29.0     # кВ — crit > 29 кВ
+        exponent: 2.0
 
-  power_consumption:
-    label: "Энергопотребление"
-    state_key: power_kw
-    risk_type: ratio_hi      # compares to norms.power_nominal_kw
-    norm_key: power_nominal_kw
-    warn_pct: 110            # % of nominal — risk starts
-    crit_pct: 130            # % of nominal — risk = 1.0
-    exponent: 2.0
+  # ── Пантограф (контактные вставки) ──────────────────────────────────────
+  # Дуговая эрозия вставок при токе > 700 А
+  pantograph:
+    label: "Пантограф"
+    weight: 1.0
+    damage_rate: 0.03   # 🔴 быстрый
+    aggregation: max
+    sensors:
+      - key: pantograph_current
+        risk_type: linear_hi
+        warn: 700         # А — умеренная нагрузка
+        crit: 850         # А — интенсивная дуговая эрозия
+        exponent: 2.0
 
-  brake_compressor_temp:
-    label: "Компрессор ТС — температура"
-    state_key: compressor_temp
-    risk_type: linear_hi
-    warn: 60                 # °C — risk starts (typical operating range up to ~60°C)
-    crit: 100                # °C — risk = 1.0 (thermal damage zone)
-    exponent: 2.5            # slow wear in normal range, sharp near thermal limit
+  # ── Коэффициент мощности / EMI-фильтры ──────────────────────────────────
+  power_factor:
+    label: "Коэффициент мощности"
+    weight: 0.8
+    damage_rate: 0.015  # 🟡 умеренный
+    aggregation: max
+    sensors:
+      - key: power_factor
+        risk_type: linear_lo
+        warn: 0.85        # — риск начинается при снижении cos φ < 0.85
+        crit: 0.75        # — risk=1.0
+        exponent: 2.0
 
-  brake_fill_rate:
-    label: "Компрессор ТС — скорость заполнения"
-    state_key: brake_fill_rate   # derived: max(0, delta_brake / dt) injected by tracker
-    risk_type: linear_hi
-    warn: 0.08               # atm/sec — normal max fill rate under load
-    crit: 0.25               # atm/sec — excessive fill rate (compressor racing)
-    exponent: 3.0            # only aggressive fill cycles cause real wear
+  # ── Силовая электроника (IGBT, DC-звено) ────────────────────────────────
+  power_electronics:
+    label: "Силовая электроника"
+    weight: 1.0
+    damage_rate: 0.02
+    aggregation: max
+    sensors:
+      - key: power_kw
+        risk_type: ratio_hi
+        norm_key: power_nominal_kw
+        warn_pct: 100     # % от номинала 8800 кВт — риск при работе на пределе
+        crit_pct: 115     # % — перегрузка IGBT-модулей
+        exponent: 2.0
+
+  # ── Тормозная система (давление магистрали) ──────────────────────────────
+  brake_system:
+    label: "Тормозная система"
+    weight: 0.8
+    damage_rate: 0.015  # 🟡 умеренный
+    aggregation: max
+    sensors:
+      - key: brake
+        risk_type: band_outside
+        ok_lo: 4.5        # атм — нижняя граница нормы
+        ok_hi: 5.8        # атм — верхняя граница нормы
+        crit_lo: 3.5      # атм — недодавление → скольжение → прокат бандажа
+        crit_hi: 6.5      # атм — перегрев колодок
+        exponent: 2.0
+
+  # ── Компрессор (температура + режим заполнения) ──────────────────────────
+  compressor:
+    label: "Компрессор"
+    weight: 0.7
+    damage_rate: 0.015  # 🟡 умеренный
+    aggregation: max
+    sensors:
+      - key: compressor_temp
+        risk_type: linear_hi
+        warn: 60          # °C — начало теплового стресса
+        crit: 85          # °C — по analys.md (ранее 100, скорректировано)
+        exponent: 2.5
+      - key: brake_fill_rate
+        risk_type: linear_hi
+        warn: 0.08        # атм/с — нормальный максимум при заполнении
+        crit: 0.25        # атм/с — гонка компрессора
+        exponent: 3.0

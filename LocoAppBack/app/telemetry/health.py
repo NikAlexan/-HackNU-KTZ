@@ -18,7 +18,7 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import ComponentHealth
-from app.telemetry.risk import compute_risk
+from app.telemetry.risk import compute_component_risk, sensor_cfgs
 
 logger = logging.getLogger(__name__)
 
@@ -33,10 +33,10 @@ def calc_health_from_config(sensors: dict, node_cfg: dict) -> tuple[float, str]:
     """
     Compute instantaneous health score [0, 100] from current sensor readings.
 
-    Score = 100 − mean(risk_per_component) × 100
+    Score = 100 − weighted_mean(risk_per_component) × 100
 
-    Each component is weighted equally; the exponent in each component's config
-    already shapes how aggressively risk grows with deviation.
+    Component weights come from the "weight" field in YAML (default 1.0).
+    Multi-sensor components aggregate via their "aggregation" field (default "max").
 
     Args:
         sensors:   Flat sensor readings from extract_sensors()
@@ -50,8 +50,39 @@ def calc_health_from_config(sensors: dict, node_cfg: dict) -> tuple[float, str]:
     if not components:
         return 100.0, "A"
 
-    risks = [compute_risk(cfg, sensors, norms) for cfg in components.values()]
-    avg_risk = sum(risks) / len(risks)
+    risks = _component_risks(components, sensors, norms)
+    return _index_from_risks(risks, components)
+
+
+def health_grade_from_index(index: float) -> str:
+    if index >= 90: return "A"
+    if index >= 75: return "B"
+    if index >= 60: return "C"
+    if index >= 40: return "D"
+    return "E"
+
+
+def _component_risks(components: dict, sensors: dict, norms: dict) -> dict[str, float]:
+    """Compute risk [0–1] for every component. Single source of truth per tick."""
+    return {
+        name: compute_component_risk(
+            sensor_cfgs(cfg), sensors, norms,
+            cfg.get("aggregation", "max"),
+        )
+        for name, cfg in components.items()
+    }
+
+
+def _index_from_risks(risks: dict[str, float], components: dict) -> tuple[float, str]:
+    """Convert per-component risk dict to (health_index, grade)."""
+    total_w = 0.0
+    weighted_risk = 0.0
+    for name, risk in risks.items():
+        w = float(components[name].get("weight", 1.0))
+        weighted_risk += risk * w
+        total_w += w
+
+    avg_risk = weighted_risk / total_w if total_w else 0.0
     index = round(max(0.0, min(100.0, 100.0 - avg_risk * 100.0)), 1)
 
     if index >= 90:
@@ -118,23 +149,23 @@ class ComponentHealthTracker:
         )
         return tracker
 
-    def tick(self, sensors: dict, dt_sec: float) -> dict[str, float]:
+    def tick(self, sensors: dict, dt_sec: float) -> tuple[dict[str, float], dict[str, float]]:
         """
         Apply damage based on current sensor readings.
-        Returns snapshot {component: health} rounded to 1 decimal.
-        """
-        for comp, comp_cfg in self._components.items():
-            risk = compute_risk(comp_cfg, sensors, self._norms)
-            self.health[comp] = max(0.0, self.health[comp] - risk * self._damage_rate * dt_sec)
-            self.risk_accum[comp] += risk * dt_sec
-        return {c: round(v, 1) for c, v in self.health.items()}
 
-    def current_risks(self, sensors: dict) -> dict[str, float]:
-        """Return current risk level per component (0–1), for display."""
-        return {
-            comp: round(compute_risk(cfg, sensors, self._norms), 3)
-            for comp, cfg in self._components.items()
-        }
+        Returns:
+            (component_snap, component_risks) — health rounded to 1dp, risk rounded to 3dp.
+            Risks are computed once and reused for both damage and display.
+        """
+        risks = _component_risks(self._components, sensors, self._norms)
+        for comp, comp_cfg in self._components.items():
+            risk = risks[comp]
+            rate = float(comp_cfg.get("damage_rate", self._damage_rate))
+            self.health[comp] = max(0.0, self.health[comp] - risk * rate * dt_sec)
+            self.risk_accum[comp] += risk * dt_sec
+        snap = {c: round(v, 1) for c, v in self.health.items()}
+        display_risks = {c: round(r, 3) for c, r in risks.items()}
+        return snap, display_risks
 
     async def repair(
         self,

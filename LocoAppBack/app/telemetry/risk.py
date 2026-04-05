@@ -28,14 +28,15 @@ def _curve(normalized: float, exponent: float) -> float:
 
 def compute_risk(comp_cfg: dict, sensors: dict, norms: dict) -> float:
     """
-    Return risk level in [0.0, 1.0] for a single component.
+    Return risk level in [0.0, 1.0] for a single sensor spec.
 
     Args:
-        comp_cfg: Component config dict from YAML (risk_type, thresholds, exponent)
+        comp_cfg: Sensor config dict from YAML (risk_type, thresholds, exponent).
+                  Supports both new format (key:) and legacy format (state_key:).
         sensors:  Flat sensor readings dict from extract_sensors()
         norms:    Norms dict from top-level YAML (reference values for ratio_hi)
     """
-    state_key: str = comp_cfg["state_key"]
+    state_key: str = comp_cfg["key"] if "key" in comp_cfg else comp_cfg.get("state_key", "")
     value = sensors.get(state_key)
     if value is None:
         return 0.0
@@ -93,3 +94,35 @@ def compute_risk(comp_cfg: dict, sensors: dict, norms: dict) -> float:
 
     logger.warning("Unknown risk_type %r for component — returning 0", risk_type)
     return 0.0
+
+
+def sensor_cfgs(comp_cfg: dict) -> list[dict]:
+    """Return sensor spec list from component config (new or legacy format)."""
+    if "sensors" in comp_cfg:
+        return comp_cfg["sensors"]
+    return [comp_cfg]  # legacy: single sensor defined directly on component
+
+
+def compute_component_risk(
+    sensor_cfgs: list[dict],
+    sensors: dict,
+    norms: dict,
+    aggregation: str = "max",
+) -> float:
+    """
+    Aggregate risk across all sensor specs of one component.
+
+    aggregation:
+      "max"      — component risk = worst individual sensor (default)
+      "mean"     — arithmetic mean of all sensor risks
+      "weighted" — weighted mean (uses per-sensor "weight" field, default 1.0)
+    """
+    risks = [compute_risk(cfg, sensors, norms) for cfg in sensor_cfgs]
+    if not risks:
+        return 0.0
+    if aggregation == "max":
+        return max(risks)
+    if aggregation == "weighted":
+        weights = [float(cfg.get("weight", 1.0)) for cfg in sensor_cfgs]
+        return sum(r * w for r, w in zip(risks, weights)) / sum(weights)
+    return sum(risks) / len(risks)  # mean

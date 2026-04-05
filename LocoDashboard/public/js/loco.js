@@ -220,16 +220,20 @@ function renderTable(aggregates, locoType) {
 // ── component health ─────────────────────────────────────────────────────────
 
 const _COMP_LABELS = {
-  transformer:             'Трансформатор',
-  traction_drives:         'Тяговые электродвигатели',
-  catenary_system:         'Контактная сеть',
-  power_consumption:       'Энергопотребление',
-  engine:                  'Дизельный двигатель',
-  cooling_system:          'Система охлаждения',
-  fuel_system:             'Топливная система',
-  fuel_consumption:        'Расход топлива',
-  brake_compressor_temp:   'Компрессор ТС — температура',
-  brake_fill_rate:         'Компрессор ТС — скорость заполнения',
+  transformer:       'Трансформатор',
+  traction_drives:   'Тяговые электродвигатели',
+  catenary_system:   'Контактная сеть',
+  pantograph:        'Пантограф',
+  power_factor:      'Коэффициент мощности',
+  power_electronics: 'Силовая электроника',
+  brake_system:      'Тормозная система',
+  compressor:        'Компрессор',
+  engine:            'Дизельный двигатель',
+  cooling_system:    'Система охлаждения',
+  turbocharger:      'Турбонагнетатель',
+  engine_rpm:        'Обороты дизеля',
+  fuel_system:       'Топливная система',
+  main_generator:    'Главный генератор',
 };
 
 function _compColor(h) {

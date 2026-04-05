@@ -18,7 +18,7 @@ from datetime import datetime, timezone
 
 from app.config import LOCO_ID, LOCO_NODE_CONFIG, LOCO_SERIES, LOCO_TYPE
 from app.database import AsyncSessionLocal  # used by ComponentHealthTracker.load
-from app.telemetry.health import ComponentHealthTracker, calc_health_from_config
+from app.telemetry.health import ComponentHealthTracker, health_grade_from_index
 from app.telemetry.node_config import load_node_config
 from app.telemetry.packet import build_packet
 from app.telemetry.sensors_extract import extract_sensors
@@ -65,12 +65,16 @@ async def run_generator() -> None:
         # 2. Sensor extraction — flat dict, single source of truth for all downstream
         sensors = extract_sensors(state, LOCO_TYPE)
 
-        # 3. Instantaneous health (config-driven, no hardcoded thresholds)
-        health_index, health_grade = calc_health_from_config(sensors, node_cfg)
-
-        # 4. Cumulative component health
-        component_snap = tracker.tick(sensors, dt_sec)
-        component_risks = tracker.current_risks(sensors)
+        # 3+4. Risks computed once for damage + display; health_index from cumulative snap
+        component_snap, component_risks = tracker.tick(sensors, dt_sec)
+        components_cfg = node_cfg["components"]
+        total_w, weighted_h = 0.0, 0.0
+        for name, h in component_snap.items():
+            w = float(components_cfg[name].get("weight", 1.0))
+            weighted_h += h * w
+            total_w += w
+        health_index = round(weighted_h / total_w, 1) if total_w else 100.0
+        health_grade = health_grade_from_index(health_index)
 
         # 5. WebSocket packet
         packet = build_packet(
