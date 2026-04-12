@@ -21,6 +21,8 @@ telemetry/
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL asyncpg URL | `postgresql+asyncpg://loco_user:loco_pass@db:5432/locomotive_telemetry` |
 | `DASHBOARD_URL` | Адрес LocoDashboardBack | `http://dashboard_back_api:9000` |
+| `DASHBOARD_HOST` | Хост LocoDashboardBack (если `DASHBOARD_URL` не задан) | `127.0.0.1` |
+| `DASHBOARD_PORT` | Порт LocoDashboardBack (если `DASHBOARD_URL` не задан) | `9000` |
 | `LOCO_ID` | Идентификатор локомотива | `kz8a-001` |
 | `LOCO_TYPE` | Тип тяги: `electro` или `diesel` | `diesel` |
 | `LOCO_SERIES` | Серия локомотива | `KZ8A` |

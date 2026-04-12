@@ -1,0 +1,178 @@
+# Docker Swarm Stack — Locomotive On-Board Systems
+# Stack name: loco_stack
+# Deploy: docker stack deploy -c docker-stack-loco.yml loco_stack
+#
+# One PostgreSQL database per locomotive (data isolation, mirrors real BCK-3 architecture).
+# On-board computers are designed for unstable connectivity — restart_policy handles reconnects.
+
+networks:
+  loco_shared:
+    external: true
+
+volumes:
+  postgres_kz8a_001_data:
+  postgres_kz8a_002_data:
+  postgres_te33a_001_data:
+  postgres_te33a_002_data:
+
+services:
+
+  # ── KZ8A-001 Database ───────────────────────────────────────────────────────
+  db_kz8a_001:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: loco_kz8a_001
+      POSTGRES_USER: loco_user
+      POSTGRES_PASSWORD: loco_pass
+    volumes:
+      - postgres_kz8a_001_data:/var/lib/postgresql/data
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── KZ8A-002 Database ───────────────────────────────────────────────────────
+  db_kz8a_002:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: loco_kz8a_002
+      POSTGRES_USER: loco_user
+      POSTGRES_PASSWORD: loco_pass
+    volumes:
+      - postgres_kz8a_002_data:/var/lib/postgresql/data
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── TE33A-001 Database ──────────────────────────────────────────────────────
+  db_te33a_001:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: loco_te33a_001
+      POSTGRES_USER: loco_user
+      POSTGRES_PASSWORD: loco_pass
+    volumes:
+      - postgres_te33a_001_data:/var/lib/postgresql/data
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── TE33A-002 Database ──────────────────────────────────────────────────────
+  db_te33a_002:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: loco_te33a_002
+      POSTGRES_USER: loco_user
+      POSTGRES_PASSWORD: loco_pass
+    volumes:
+      - postgres_te33a_002_data:/var/lib/postgresql/data
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── BCK-3 Simulator: KZ8A-001 (Electro) ────────────────────────────────────
+  loco_kz8a_001:
+    image: loco_app_back:swarm
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db_kz8a_001:5432/loco_kz8a_001
+      DASHBOARD_URL: http://dashboard_api:9000
+      LOCO_ID: kz8a-001
+      LOCO_TYPE: electro
+      LOCO_SERIES: KZ8A
+      REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/kz8a_electro.yaml
+      MQTT_URL: mqtt://mqtt:1883
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 10
+        delay: 5s
+
+  # ── BCK-3 Simulator: KZ8A-002 (Electro) ────────────────────────────────────
+  loco_kz8a_002:
+    image: loco_app_back:swarm
+    ports:
+      - "8001:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db_kz8a_002:5432/loco_kz8a_002
+      DASHBOARD_URL: http://dashboard_api:9000
+      LOCO_ID: kz8a-002
+      LOCO_TYPE: electro
+      LOCO_SERIES: KZ8A
+      REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/kz8a_electro.yaml
+      MQTT_URL: mqtt://mqtt:1883
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 10
+        delay: 5s
+
+  # ── BCK-3 Simulator: TE33A-001 (Diesel) ────────────────────────────────────
+  loco_te33a_001:
+    image: loco_app_back:swarm
+    ports:
+      - "8002:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db_te33a_001:5432/loco_te33a_001
+      DASHBOARD_URL: http://dashboard_api:9000
+      LOCO_ID: te33a-001
+      LOCO_TYPE: diesel
+      LOCO_SERIES: TE33A
+      REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/te33a_diesel.yaml
+      MQTT_URL: mqtt://mqtt:1883
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 10
+        delay: 5s
+
+  # ── BCK-3 Simulator: TE33A-002 (Diesel) ────────────────────────────────────
+  loco_te33a_002:
+    image: loco_app_back:swarm
+    ports:
+      - "8003:8000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://loco_user:loco_pass@db_te33a_002:5432/loco_te33a_002
+      DASHBOARD_URL: http://dashboard_api:9000
+      LOCO_ID: te33a-002
+      LOCO_TYPE: diesel
+      LOCO_SERIES: TE33A
+      REPORTER_API_KEY: super-secret-key-change-me
+      LOCO_NODE_CONFIG: /app/app/telemetry/node_config/te33a_diesel.yaml
+      MQTT_URL: mqtt://mqtt:1883
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 10
+        delay: 5s

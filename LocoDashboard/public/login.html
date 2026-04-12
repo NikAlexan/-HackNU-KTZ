@@ -35,8 +35,10 @@
     </form>
   </div>
 </div>
+<script src="/runtime-config.js"></script>
 <script>
-  const API = 'http://localhost:9000';
+  const API = (window.__LOCO_CONFIG__ && window.__LOCO_CONFIG__.dashboardApiBaseUrl)
+    || 'http://127.0.0.1:9000';
   const KEY = 'loco_token';
 
   // Already logged in — skip login page

@@ -17,6 +17,8 @@ from app.routers.ws import router as ws_router
 
 _DEFAULT_ADMIN_USER = os.getenv("ADMIN_USERNAME", "admin")
 _DEFAULT_ADMIN_PASS = os.getenv("ADMIN_PASSWORD", "admin123")
+_DEFAULT_CORS_ORIGINS = "http://localhost:3000,http://127.0.0.1:3000,http://[::1]:3000"
+_CORS_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", _DEFAULT_CORS_ORIGINS).split(",") if o.strip()]
 
 
 async def _seed_admin() -> None:
@@ -43,10 +45,13 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="LocoDashboardBack", lifespan=lifespan)
 
+from prometheus_fastapi_instrumentator import Instrumentator
+Instrumentator().instrument(app).expose(app)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
-    allow_methods=["GET", "POST"],
+    allow_origins=_CORS_ORIGINS,
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 

@@ -1,0 +1,57 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # LocoDashboardBack — центральный API (instrumented with prometheus-fastapi-instrumentator)
+  - job_name: loco_dashboard_api
+    static_configs:
+      - targets: ['dashboard_api:9000']
+
+  # Host metrics (node_exporter in loco_shared overlay)
+  - job_name: node_exporter
+    static_configs:
+      - targets: ['node_exporter:9100']
+
+  # Blackbox probes — центральная инфраструктура (должна быть стабильна)
+  - job_name: blackbox_http
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://dashboard_api:9000/
+          - http://dashboard_ui:3000/login.html
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115
+
+  # Blackbox probes — бортовые компьютеры (нестабильны по природе, не влияют на SLO)
+  - job_name: blackbox_loco_boards
+    metrics_path: /probe
+    params:
+      module: [http_2xx]
+    static_configs:
+      - targets:
+          - http://loco_kz8a_001:8000/
+          - http://loco_kz8a_002:8000/
+          - http://loco_te33a_001:8000/
+          - http://loco_te33a_002:8000/
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: blackbox:9115

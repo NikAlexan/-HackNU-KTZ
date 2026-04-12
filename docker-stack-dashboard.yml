@@ -1,0 +1,122 @@
+# Docker Swarm Stack — Dashboard Infrastructure
+# Stack name: dashboard_stack
+#
+# NOTE: Prometheus, Grafana, Node Exporter and Blackbox Exporter are intentionally
+# kept in docker-compose-monitoring.yml (not in this Swarm stack).
+# Docker Desktop for Linux does not forward Swarm ingress ports to the host correctly.
+# Regular compose containers on the same attachable overlay network work fine.
+#
+# Config files are stored as Docker Configs (no bind mounts, no hardcoded paths).
+# Run `make swarm-configs` before first deploy.
+#
+# Deploy:
+#   make swarm-configs
+#   docker stack deploy --resolve-image never -c docker-stack-dashboard.yml dashboard_stack
+
+networks:
+  loco_shared:
+    external: true
+
+volumes:
+  postgres_dashboard_data:
+
+configs:
+  prometheus_yml:
+    external: true
+  alert_rules_yml:
+    external: true
+  grafana_datasources_yml:
+    external: true
+  grafana_dashboards_yml:
+    external: true
+  grafana_dashboard_json:
+    external: true
+
+services:
+
+  # ── MQTT Broker (EMQX) ──────────────────────────────────────────────────────
+  mqtt:
+    image: emqx/emqx:5.8
+    ports:
+      - "1883:1883"
+      - "18083:18083"
+    environment:
+      EMQX_NODE_NAME: emqx@localhost
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── Dispatcher Database ─────────────────────────────────────────────────────
+  db_dashboard:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: loco_dashboard
+      POSTGRES_USER: dash_user
+      POSTGRES_PASSWORD: dash_pass
+    volumes:
+      - postgres_dashboard_data:/var/lib/postgresql/data
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── Dispatcher API (LocoDashboardBack) ──────────────────────────────────────
+  # Exposes /metrics for Prometheus (prometheus-fastapi-instrumentator)
+  dashboard_api:
+    image: loco_dash_back:swarm
+    ports:
+      - "9000:9000"
+    environment:
+      DATABASE_URL: postgresql+asyncpg://dash_user:dash_pass@db_dashboard:5432/loco_dashboard
+      API_KEY: super-secret-key-change-me
+      JWT_SECRET: change-me-in-production
+      ADMIN_USERNAME: admin
+      ADMIN_PASSWORD: admin123
+      MQTT_URL: mqtt://mqtt:1883
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        max_attempts: 10
+        delay: 5s
+
+  # ── Fleet Dashboard UI (LocoDashboard) ──────────────────────────────────────
+  dashboard_ui:
+    image: loco_dashboard_ui:swarm
+    ports:
+      - "3000:3000"
+    environment:
+      DASHBOARD_API_HOST: "127.0.0.1"
+      DASHBOARD_API_PORT: "9000"
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── Driver / Dispatcher Panel (LocoPanel) ───────────────────────────────────
+  panel_ui:
+    image: loco_panel_ui:swarm
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: "4000"
+      HOST: "0.0.0.0"
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s

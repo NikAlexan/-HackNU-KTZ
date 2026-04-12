@@ -1,0 +1,125 @@
+# Docker Swarm Stack — Monitoring Infrastructure
+# Stack name: monitoring_stack
+#
+# Prometheus, Grafana, Node Exporter, Blackbox Exporter.
+# All services join loco_shared overlay — can reach app services by DNS name.
+#
+# Config files are stored as Docker Configs (no bind mounts, no hardcoded paths).
+# Run `make swarm-configs` before first deploy.
+#
+# Deploy:
+#   make swarm-configs
+#   docker stack deploy --resolve-image never -c docker-stack-monitoring.yml monitoring_stack
+
+networks:
+  loco_shared:
+    external: true
+
+volumes:
+  prometheus_data:
+  grafana_data:
+
+configs:
+  prometheus_yml:
+    external: true
+  alert_rules_yml:
+    external: true
+  grafana_datasources_yml:
+    external: true
+  grafana_dashboards_yml:
+    external: true
+  grafana_dashboard_json:
+    external: true
+
+services:
+
+  # ── Prometheus ───────────────────────────────────────────────────────────────
+  prometheus:
+    image: prom/prometheus:v3.4.0
+    ports:
+      - "9090:9090"
+    configs:
+      - source: prometheus_yml
+        target: /etc/prometheus/prometheus.yml
+      - source: alert_rules_yml
+        target: /etc/prometheus/alert_rules.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=15d"
+      - "--web.enable-lifecycle"
+    volumes:
+      - prometheus_data:/prometheus
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── Grafana ──────────────────────────────────────────────────────────────────
+  grafana:
+    image: grafana/grafana:11.6.1
+    ports:
+      - "3001:3000"
+    configs:
+      - source: grafana_datasources_yml
+        target: /etc/grafana/provisioning/datasources/prometheus.yml
+      - source: grafana_dashboards_yml
+        target: /etc/grafana/provisioning/dashboards/dashboard.yml
+      - source: grafana_dashboard_json
+        target: /var/lib/grafana/dashboards/loco_digital_twin.json
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/loco_digital_twin.json
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── Node Exporter ────────────────────────────────────────────────────────────
+  # Collects host-level metrics (CPU, memory, disk, network).
+  # Filesystem bind mounts give access to real host /proc, /sys, /rootfs.
+  node_exporter:
+    image: prom/node-exporter:v1.9.1
+    ports:
+      - "9100:9100"
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - loco_shared
+    deploy:
+      mode: global
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+
+  # ── Blackbox Exporter ────────────────────────────────────────────────────────
+  # HTTP probing for Dispatcher API, Fleet UI, and BCK-3 on-board computers.
+  blackbox:
+    image: prom/blackbox-exporter:v0.25.0
+    ports:
+      - "9115:9115"
+    networks:
+      - loco_shared
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 5s

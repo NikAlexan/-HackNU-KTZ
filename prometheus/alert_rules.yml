@@ -1,0 +1,80 @@
+groups:
+  - name: loco_slo_alerts
+    rules:
+
+      # -----------------------------------------------------------------------
+      # SLI 1 — Availability SLO: 99.5%
+      # Метрика: доля успешных (не 5xx) HTTP-ответов LocoDashboardBack за 2 мин
+      # Порог Warning: ошибки > 1% (SLO breach risk)
+      # -----------------------------------------------------------------------
+      - alert: LocoAPIHighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="loco_dashboard_api", status=~"5.."}[2m]))
+            /
+            sum(rate(http_requests_total{job="loco_dashboard_api"}[2m]))
+          ) > 0.01
+        for: 2m
+        labels:
+          severity: warning
+          service: dispatcher_api
+        annotations:
+          summary: "Dispatcher API error rate exceeds 1% — SLO breach risk"
+          description: >
+            The LocoDashboardBack API has had more than 1% HTTP 5xx responses
+            over the last 2 minutes. SLO target is 99.5% availability.
+            Current SLI may be falling below threshold.
+
+      # -----------------------------------------------------------------------
+      # SLI 1 — Availability SLO: 99.5%  (Critical: API completely down)
+      # Метрика: blackbox probe_success == 0 для dashboard_api
+      # Порог Critical: сервис не отвечает 1 минуту
+      # -----------------------------------------------------------------------
+      - alert: LocoAPICriticalDown
+        expr: |
+          probe_success{job="blackbox_http", instance=~".*dashboard_api.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          service: dispatcher_api
+        annotations:
+          summary: "Dispatcher API is completely DOWN"
+          description: >
+            The LocoDashboardBack API (http://dashboard_api:9000/) has been
+            unreachable for 1 minute. Blackbox HTTP probe is failing.
+            All dispatcher operations are unavailable.
+
+  - name: loco_infrastructure
+    rules:
+
+      # -----------------------------------------------------------------------
+      # Информационный алерт: бортовые компьютеры нестабильны (ожидаемо)
+      # Не влияет на SLO — только для наблюдаемости
+      # -----------------------------------------------------------------------
+      - alert: LocoOnBoardDisconnected
+        expr: |
+          probe_success{job="blackbox_loco_boards"} == 0
+        for: 3m
+        labels:
+          severity: info
+          service: loco_onboard
+        annotations:
+          summary: "On-board computer {{ $labels.instance }} is unreachable"
+          description: >
+            BCK-3 board {{ $labels.instance }} has been unreachable for 3 minutes.
+            This is expected behaviour during communication outages — does not
+            affect dispatcher SLO, telemetry will resume on reconnect.
+
+      # -----------------------------------------------------------------------
+      # Node Exporter — высокая утилизация CPU хоста
+      # -----------------------------------------------------------------------
+      - alert: HostHighCPU
+        expr: |
+          100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 85
+        for: 5m
+        labels:
+          severity: warning
+          service: host
+        annotations:
+          summary: "Host CPU utilisation above 85%"
+          description: "Average CPU usage has been above 85% for 5 minutes."

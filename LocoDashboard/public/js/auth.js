@@ -1,6 +1,7 @@
 'use strict';
 
-const DASHBOARD_API = 'http://localhost:9000';
+const DASHBOARD_API = (window.__LOCO_CONFIG__ && window.__LOCO_CONFIG__.dashboardApiBaseUrl)
+  || 'http://127.0.0.1:9000';
 const AUTH_TOKEN_KEY = 'loco_token';
 
 function getToken() {

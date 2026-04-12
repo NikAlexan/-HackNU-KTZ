@@ -12,7 +12,12 @@ from app.register import register_in_dashboard
 from app.routers.maintenance import router as maintenance_router
 from app.routers.ws import router as ws_router
 
-DASHBOARD_URL = os.getenv("DASHBOARD_URL", "http://localhost:9000")
+if os.getenv("DASHBOARD_URL"):
+    DASHBOARD_URL = os.getenv("DASHBOARD_URL")
+else:
+    dashboard_host = os.getenv("DASHBOARD_HOST", "127.0.0.1")
+    dashboard_port = os.getenv("DASHBOARD_PORT", "9000")
+    DASHBOARD_URL = f"http://{dashboard_host}:{dashboard_port}"
 
 
 @asynccontextmanager

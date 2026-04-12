@@ -18,6 +18,7 @@ models.py         — Locomotive, TelemetryAggregate, Route, Event и др.
 |---|---|---|
 | `DATABASE_URL` | PostgreSQL asyncpg URL | `postgresql+asyncpg://dash_user:dash_pass@db:5432/loco_dashboard` |
 | `API_KEY` | Bearer-токен для приёма агрегатов | `super-secret-key-change-me` |
+| `CORS_ORIGINS` | Список origin через запятую для UI | `http://localhost:3000,http://127.0.0.1:3000` |
 
 `API_KEY` должен совпадать с `REPORTER_API_KEY` в LocoAppBack.
 

@@ -2,7 +2,9 @@
 
 checkAuth(); // redirect to /login.html if no token
 
-const DASHBOARD_WS = 'ws://localhost:9000/ws/locomotives';
+const DASHBOARD_WS_BASE = (window.__LOCO_CONFIG__ && window.__LOCO_CONFIG__.dashboardWsBaseUrl)
+  || 'ws://127.0.0.1:9000';
+const DASHBOARD_WS = `${DASHBOARD_WS_BASE}/ws/locomotives`;
 
 // Clock
 function tick() {
